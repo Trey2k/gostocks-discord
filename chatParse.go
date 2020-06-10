@@ -45,7 +45,7 @@ func ChatParse(msg string) [7]string {
 					if commands[4] == "" {
 						commands[4] = strings.Replace(cmd, "@", "", 1)
 						ci++
-					} else if commands[6] == "" {
+					} else if commands[6] == "" && isNumeric(cmd) {
 						commands[6] = cmd
 						ci++
 					}
