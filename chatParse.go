@@ -44,11 +44,17 @@ func ChatParse(msg string, cmds *Commands) {
 					if cmds.price == 0 {
 						var err error
 						cmds.price, err = toNumericIgnore(cmd, "@", 1)
-						errCheck("error converting price to float64", err)
+
+						if err != nil {
+							println("error converting price '" + cmd + "' to float64: " + err.Error())
+						}
 					} else if cmds.stopLoss == 0 {
 						var err error
 						cmds.stopLoss, err = toNumeric(cmd)
-						errCheck("error converting stop loss to float64", err)
+
+						if err != nil {
+							println("error converting stop loss '" + cmd + "' to float64: " + err.Error())
+						}
 					}
 				}
 			}

@@ -32,30 +32,40 @@ type TickerInfo struct {
 }
 
 //GetTickerInfo returns a json struct from yahoo finance
-func GetTickerInfo(ticker string) TickerInfo {
+func GetTickerInfo(ticker string) (TickerInfo, error) {
+	var ticketInfo TickerInfo
 	resp, err := http.Get("http://d.yimg.com/autoc.finance.yahoo.com/autoc?query=" + ticker + "&region=1&lang=en")
-	errCheck("Error connecting to yahoo REST api", err)
+	if err != nil {
+		return ticketInfo, err
+	}
 
 	defer resp.Body.Close()
-	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return ticketInfo, err
+	}
 
 	// Convert response body to tickerInfor struct
 	var response apiResponse
 	json.Unmarshal(bodyBytes, &response)
-	var ticketInfo TickerInfo
+
 	for i := 0; i < len(response.ResultSet.Result); i++ {
 		if strings.ToLower(response.ResultSet.Result[i].Symbol) == strings.ToLower(ticker) {
 			ticketInfo.Symbol = response.ResultSet.Result[i].Symbol
 		}
 	}
-	return ticketInfo
+	return ticketInfo, nil
 }
 
 //IsValidTicker test if string is a valid ticker
 func IsValidTicker(s string) bool {
 	if len(s) <= 5 {
 		if isLetter(s) {
-			tikInf := GetTickerInfo(s)
+			tikInf, err := GetTickerInfo(s)
+			if err != nil {
+				println("Error getting ticker info: " + err.Error())
+				return false
+			}
 			if tikInf.Symbol != "" {
 				return true
 			}
