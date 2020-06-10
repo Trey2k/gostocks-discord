@@ -4,44 +4,59 @@ import (
 	"strings"
 )
 
+//Commands list of commands built from messages
+type Commands struct {
+	buysell    string
+	ticker     string
+	expDate    string
+	strikPrice string
+	price      float64
+	danger     string
+	stopLoss   float64
+}
+
 //ChatParse : Parse a chat message and build a array of commands
-func ChatParse(msg string) [7]string {
-	var commands [7]string
+func ChatParse(msg string) Commands {
+	var cmds Commands
 	msg = strings.ToLower(msg)
 	msgs := strings.Split(msg, " ")
 
-	commands[5] = "safe"
+	cmds.danger = "safe"
 	if strings.Contains(msg, "risky") || strings.Contains(msg, "lotto") {
-		commands[5] = "risky"
+		cmds.danger = "risky"
 	}
 
 	for i := 0; i < len(msgs); i++ {
 		cmd := msgs[i]
 		switch cmd {
 		case "stc":
-			commands[0] = "STC"
+			cmds.buysell = "STC"
 		case "bto":
-			commands[0] = "BTO"
+			cmds.buysell = "BTO"
 		default:
-			if i == 2 { //TODO: instead of basing ticker off of count check if cmd is equal to a valid ticker
-				commands[1] = cmd
+			if i <= 4 && IsValidTicker(cmd) {
+				cmds.ticker = cmd
 			} else {
 				if strings.Contains(cmd, "/") && isNumericIgnore(cmd, "/", 2) {
-					commands[2] = cmd
+					cmds.expDate = cmd
 				} else if strings.Contains(cmd, "p") && isNumericIgnore(cmd, "p", 1) || strings.Contains(cmd, "c") && isNumericIgnore(cmd, "c", 1) {
-					commands[3] = cmd
+					cmds.strikPrice = cmd
 				} else if strings.Contains(cmd, ".") && isNumericIgnore(cmd, "@", 1) {
-					if commands[4] == "" {
-						commands[4] = strings.Replace(cmd, "@", "", 1)
-					} else if commands[6] == "" {
-						commands[6] = cmd
+					if cmds.price == 0 {
+						var err error
+						cmds.price, err = toNumericIgnore(cmd, "@", 1)
+						errCheck("error converting price to float64", err)
+					} else if cmds.stopLoss == 0 {
+						var err error
+						cmds.stopLoss, err = toNumeric(cmd)
+						errCheck("error converting stop loss to float64", err)
 					}
 				}
 			}
 		}
 	}
-	if commands[6] == "" {
-		commands[6] = "0.00"
+	if cmds.stopLoss == 0 {
+		cmds.stopLoss = 0.00
 	}
-	return commands
+	return cmds
 }

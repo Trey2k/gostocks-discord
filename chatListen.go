@@ -11,14 +11,10 @@ func chatListener(discord *discordgo.Session, message *discordgo.MessageCreate) 
 	channelID := message.ChannelID
 
 	if serverID == config.GuildID && channelID == config.ChannelID {
-		var commands [7]string
+		var commands Commands
 		commands = ChatParse(message.Content)
-		fmt.Println("-----------------------------------------")
-		fmt.Print("Commands: ")
-		for i := 0; i < len(commands); i++ {
-			fmt.Print(commands[i] + ", ")
-			commands[i] = ""
-		}
-		fmt.Println("\n-----------------------------------------")
+		fmt.Println("------------------------------------------------------------------------------------------------------------")
+		fmt.Print("Buy/Sell: " + commands.buysell + ", Ticker: " + commands.ticker + ", ExpDate: " + commands.expDate + ", StrikerPrice: " + commands.strikPrice + ", Buy Price: " + fmt.Sprint(commands.price) + ", Danger: " + commands.danger + ", Stop Loss: " + fmt.Sprint(commands.stopLoss))
+		fmt.Println("\n------------------------------------------------------------------------------------------------------------")
 	}
 }

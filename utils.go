@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -38,3 +39,5 @@ func toNumeric(s string) (float64, error) {
 	i, err := strconv.ParseFloat(s, 64)
 	return i, err
 }
+
+var isLetter = regexp.MustCompile(`^[a-zA-Z]+$`).MatchString
