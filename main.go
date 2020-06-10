@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -10,6 +12,21 @@ func init() {
 	var err error
 	config, err = getConfig()
 	errCheck("Error getting config", err)
+
+	if config.Token == "" {
+		println("Token not set in config.json")
+		os.Exit(1)
+	}
+
+	if config.GuildID == "" {
+		println("GuildID not set in config.json")
+		os.Exit(1)
+	}
+
+	if config.ChannelID == "" {
+		println("ChannelID not set in config.json")
+		os.Exit(1)
+	}
 }
 
 func main() {
