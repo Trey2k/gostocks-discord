@@ -15,7 +15,7 @@ func chatListener(discord *discordgo.Session, message *discordgo.MessageCreate) 
 		commands = ChatParse(message.Content)
 		fmt.Println("-----------------------------------------")
 		fmt.Print("Commands: ")
-		for i := 0; i < 7; i++ {
+		for i := 0; i < len(commands); i++ {
 			fmt.Print(commands[i] + ", ")
 			commands[i] = ""
 		}
