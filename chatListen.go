@@ -12,7 +12,7 @@ func chatListener(discord *discordgo.Session, message *discordgo.MessageCreate) 
 
 	if serverID == config.GuildID && channelID == config.ChannelID {
 		var commands Commands
-		commands = ChatParse(message.Content)
+		ChatParse(message.Content, &commands)
 		fmt.Println("------------------------------------------------------------------------------------------------------------")
 		fmt.Print("Buy/Sell: " + commands.buysell + ", Ticker: " + commands.ticker + ", ExpDate: " + commands.expDate + ", StrikerPrice: " + commands.strikPrice + ", Buy Price: " + fmt.Sprint(commands.price) + ", Danger: " + commands.danger + ", Stop Loss: " + fmt.Sprint(commands.stopLoss))
 		fmt.Println("\n------------------------------------------------------------------------------------------------------------")
