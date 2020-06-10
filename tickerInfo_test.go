@@ -17,7 +17,7 @@ func TestIsValidTicker(t *testing.T) {
 		{"g1", false},
 		{"SPY", true},
 		{"BYND", true},
-		{"lol", true},
+		{"lol", false},
 	}
 
 	for _, test := range tests {
