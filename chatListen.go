@@ -6,14 +6,13 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-var commands [5]string
-
 func chatListener(discord *discordgo.Session, message *discordgo.MessageCreate) {
 	serverID := message.GuildID
 	channelID := message.ChannelID
 
 	if serverID == config.GuildID && channelID == config.ChannelID {
-		chatParse(message.Content, &commands)
+		var commands [7]string
+		commands = ChatParse(message.Content)
 		fmt.Println("-----------------------------------------")
 		fmt.Print("Commands: ")
 		for i := 0; i < 5; i++ {

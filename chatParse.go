@@ -4,9 +4,16 @@ import (
 	"strings"
 )
 
-func chatParse(msg string, commands *[5]string) {
+//ChatParse : Parse a chat message and build a array of commands
+func ChatParse(msg string) [7]string {
+	var commands [7]string
 	if last := len(msg) - 1; last >= 0 && msg[last] == '.' {
 		msg = msg[:last]
+	}
+	if strings.Contains(strings.ToLower(msg), "risky") || strings.Contains(strings.ToLower(msg), "lotto") {
+		commands[5] = "risky"
+	} else {
+		commands[5] = "safe"
 	}
 	msgs := strings.Split(msg, " ")
 	ci := 0
@@ -34,14 +41,20 @@ func chatParse(msg string, commands *[5]string) {
 						commands[3] = cmd
 						ci++
 					}
-				} else if strings.Contains(cmd, ".") {
-					commands[4] = strings.Replace(cmd, "@", "", 1)
-					ci++
+				} else if strings.Contains(cmd, ".") && isNumeric(cmd) {
+					if commands[4] == "" {
+						commands[4] = strings.Replace(cmd, "@", "", 1)
+						ci++
+					} else if commands[6] == "" {
+						commands[6] = cmd
+						ci++
+					}
 				}
-			}
-			if ci == 5 {
-				return
 			}
 		}
 	}
+	if commands[6] == "" {
+		commands[6] = "0.00"
+	}
+	return commands
 }
