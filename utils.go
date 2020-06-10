@@ -13,10 +13,9 @@ func errCheck(msg string, err error) {
 	}
 }
 
-/*s = string, i = ignore char, x = ignore char count
-isNumericIgnore(s string, i string, x int)*/
-func isNumericIgnore(s string, i string, x int) bool {
-	s = strings.Replace(s, i, "", x)
+//isNumericIgnore(s string, ig string, x int)
+func isNumericIgnore(s string, ig string, x int) bool {
+	s = strings.Replace(s, ig, "", x)
 	_, err := strconv.ParseFloat(s, 64)
 	return err == nil
 }
@@ -25,4 +24,17 @@ func isNumericIgnore(s string, i string, x int) bool {
 func isNumeric(s string) bool {
 	_, err := strconv.ParseFloat(s, 64)
 	return err == nil
+}
+
+//toNumericIgnore(s string, ig string, x int) (float64, error)
+func toNumericIgnore(s string, ig string, x int) (float64, error) {
+	s = strings.Replace(s, ig, "", x)
+	i, err := strconv.ParseFloat(s, 64)
+	return i, err
+}
+
+//toNumeric(s string) (float64, error)
+func toNumeric(s string) (float64, error) {
+	i, err := strconv.ParseFloat(s, 64)
+	return i, err
 }
