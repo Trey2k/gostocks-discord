@@ -10,9 +10,10 @@ var config *Configuration
 
 //Configuration : this is exported
 type Configuration struct {
-	Token     string
-	GuildID   string
-	ChannelID string
+	Token      string
+	GuildID    string
+	ChannelID  string
+	GameStatus string
 }
 
 func getConfig() (configuration *Configuration, err error) {
@@ -36,9 +37,10 @@ func getConfig() (configuration *Configuration, err error) {
 	} //Otherwise, create config.ini, init it with the default config, then return the default config
 
 	config := &Configuration{ //Default configuration
-		Token:     "",
-		GuildID:   "",
-		ChannelID: "",
+		Token:      "",
+		GuildID:    "",
+		ChannelID:  "",
+		GameStatus: "The stock markets",
 	}
 
 	b, err := json.MarshalIndent(config, "", " ")

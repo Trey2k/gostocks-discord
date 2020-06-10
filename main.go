@@ -13,18 +13,8 @@ func init() {
 	config, err = getConfig()
 	errCheck("Error getting config", err)
 
-	if config.Token == "" {
-		println("Token not set in config.json")
-		os.Exit(1)
-	}
-
-	if config.GuildID == "" {
-		println("GuildID not set in config.json")
-		os.Exit(1)
-	}
-
-	if config.ChannelID == "" {
-		println("ChannelID not set in config.json")
+	if config.Token == "" || config.GuildID == "" || config.ChannelID == "" || config.GameStatus == "" {
+		println("A value in config.json is empty")
 		os.Exit(1)
 	}
 }
