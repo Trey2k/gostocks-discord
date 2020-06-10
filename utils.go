@@ -13,8 +13,16 @@ func errCheck(msg string, err error) {
 	}
 }
 
+/*s = string, i = ignore char, x = ignore char count
+isNumericIgnore(s string, i string, x int)*/
+func isNumericIgnore(s string, i string, x int) bool {
+	s = strings.Replace(s, i, "", x)
+	_, err := strconv.ParseFloat(s, 64)
+	return err == nil
+}
+
+//isNumeric(s string)
 func isNumeric(s string) bool {
-	s = strings.Replace(s, "@", "", 1)
 	_, err := strconv.ParseFloat(s, 64)
 	return err == nil
 }

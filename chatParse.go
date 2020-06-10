@@ -7,47 +7,34 @@ import (
 //ChatParse : Parse a chat message and build a array of commands
 func ChatParse(msg string) [7]string {
 	var commands [7]string
-	if last := len(msg) - 1; last >= 0 && msg[last] == '.' {
-		msg = msg[:last]
-	}
-	if strings.Contains(strings.ToLower(msg), "risky") || strings.Contains(strings.ToLower(msg), "lotto") {
-		commands[5] = "risky"
-	} else {
-		commands[5] = "safe"
-	}
+	msg = strings.ToLower(msg)
 	msgs := strings.Split(msg, " ")
-	ci := 0
+
+	commands[5] = "safe"
+	if strings.Contains(msg, "risky") || strings.Contains(msg, "lotto") {
+		commands[5] = "risky"
+	}
+
 	for i := 0; i < len(msgs); i++ {
-		cmd := strings.ToLower(msgs[i])
+		cmd := msgs[i]
 		switch cmd {
 		case "stc":
 			commands[0] = "STC"
-			ci++
 		case "bto":
 			commands[0] = "BTO"
-			ci++
 		default:
-			if i == 2 {
+			if i == 2 { //TODO: instead of basing ticker off of count check if cmd is equal to a valid ticker
 				commands[1] = cmd
-				ci++
 			} else {
-				if strings.Contains(cmd, "/") {
-					if i <= 4 {
-						commands[2] = cmd
-						ci++
-					}
-				} else if strings.Contains(cmd, "p") || strings.Contains(cmd, "c") {
-					if i <= 4 {
-						commands[3] = cmd
-						ci++
-					}
-				} else if strings.Contains(cmd, ".") && isNumeric(cmd) {
+				if strings.Contains(cmd, "/") && isNumericIgnore(cmd, "/", 2) {
+					commands[2] = cmd
+				} else if strings.Contains(cmd, "p") && isNumericIgnore(cmd, "p", 1) || strings.Contains(cmd, "c") && isNumericIgnore(cmd, "c", 1) {
+					commands[3] = cmd
+				} else if strings.Contains(cmd, ".") && isNumericIgnore(cmd, "@", 1) {
 					if commands[4] == "" {
 						commands[4] = strings.Replace(cmd, "@", "", 1)
-						ci++
-					} else if commands[6] == "" && isNumeric(cmd) {
+					} else if commands[6] == "" {
 						commands[6] = cmd
-						ci++
 					}
 				}
 			}
