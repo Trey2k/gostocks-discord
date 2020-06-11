@@ -51,7 +51,7 @@ func GetTickerInfo(ticker string) (TickerInfo, error) {
 
 	for i := 0; i < len(response.ResultSet.Result); i++ {
 		if strings.ToLower(response.ResultSet.Result[i].Symbol) == strings.ToLower(ticker) {
-			ticketInfo.Symbol = response.ResultSet.Result[i].Symbol
+			ticketInfo = response.ResultSet.Result[i]
 		}
 	}
 	return ticketInfo, nil
@@ -60,7 +60,7 @@ func GetTickerInfo(ticker string) (TickerInfo, error) {
 //IsValidTicker test if string is a valid ticker
 func IsValidTicker(s string) bool {
 	if len(s) <= 5 {
-		if isLetter(s) {
+		if noNumbers(s) {
 			tikInf, err := GetTickerInfo(s)
 			if err != nil {
 				println("Error getting ticker info: " + err.Error())

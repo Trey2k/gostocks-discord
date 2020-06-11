@@ -6,32 +6,34 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-var botID string
+var channel chan Commands
 
 func init() {
 	var err error
 	config, err = getConfig()
+
 	errCheck("Error getting config", err)
 
-	if config.Token == "" || config.GuildID == "" || config.ChannelID == "" || config.GameStatus == "" {
-		println("A value in config.json is empty")
+	if isStructEmpty(config.Discord) {
+		println("A value in config.Discord is empty")
+		os.Exit(1)
+	}
+	if isStructEmpty(config.IB) {
+		println("A value in config.IB is empty")
 		os.Exit(1)
 	}
 }
 
 func main() {
+	go connectIB(channel)
 
-	token := config.Token
+	token := config.Discord.Token
 
 	discord, err := discordgo.New(token)
 	errCheck("error creating discord session", err)
 
-	user, err := discord.User("@me")
-	errCheck("error retrieving account", err)
-
 	discord.AddHandler(chatListener)
 	discord.AddHandler(discordStatus)
-	botID = user.ID
 
 	err = discord.Open()
 	errCheck("Error opening connection to Discord", err)

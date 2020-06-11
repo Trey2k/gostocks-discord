@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -31,13 +32,33 @@ func isNumeric(s string) bool {
 func toNumericIgnore(s string, ig string, x int) (float64, error) {
 	s = strings.Replace(s, ig, "", x)
 	i, err := strconv.ParseFloat(s, 64)
-	return i, err
+	if err != nil {
+		return 0, err
+	}
+	return i, nil
 }
 
 //toNumeric(s string) (float64, error)
 func toNumeric(s string) (float64, error) {
 	i, err := strconv.ParseFloat(s, 64)
-	return i, err
+	if err != nil {
+		return 0, err
+	}
+	return i, nil
 }
 
-var isLetter = regexp.MustCompile(`^[a-zA-Z]+$`).MatchString
+//noNumbers : test if string contains any numbers
+var noNumbers = regexp.MustCompile(`^[a-zA-Z]+$`).MatchString
+
+//test if config is empty
+func isStructEmpty(x interface{}) bool {
+	v := reflect.ValueOf(x)
+
+	for i := 0; i < v.NumField(); i++ {
+		value := v.Field(i).Interface()
+		if value == "" || value == nil {
+			return true
+		}
+	}
+	return false
+}

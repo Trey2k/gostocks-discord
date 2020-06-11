@@ -8,12 +8,25 @@ import (
 
 var config *Configuration
 
-//Configuration : this is exported
-type Configuration struct {
+//DiscordInfo : this is exported
+type DiscordInfo struct {
 	Token      string
 	GuildID    string
 	ChannelID  string
 	GameStatus string
+}
+
+//IbAPI : this is exported
+type IbAPI struct {
+	IP       string
+	Port     int
+	ClientID int64
+}
+
+//Configuration : this is exported
+type Configuration struct {
+	Discord DiscordInfo
+	IB      IbAPI
 }
 
 func getConfig() (configuration *Configuration, err error) {
@@ -37,10 +50,17 @@ func getConfig() (configuration *Configuration, err error) {
 	} //Otherwise, create config.ini, init it with the default config, then return the default config
 
 	config := &Configuration{ //Default configuration
-		Token:      "",
-		GuildID:    "",
-		ChannelID:  "",
-		GameStatus: "The stock markets",
+		DiscordInfo{
+			Token:      "",
+			GuildID:    "",
+			ChannelID:  "",
+			GameStatus: "The stock markets",
+		},
+		IbAPI{
+			IP:       "127.0.0.1",
+			Port:     7496,
+			ClientID: 0,
+		},
 	}
 
 	b, err := json.MarshalIndent(config, "", " ")
