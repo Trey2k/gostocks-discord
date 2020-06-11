@@ -1,7 +1,7 @@
 package main
 
 import (
-	"time"
+	"fmt"
 
 	ib "github.com/hadrianl/ibapi"
 )
@@ -26,15 +26,12 @@ func connectIB(channel chan Commands) {
 
 	client.Run()
 	for {
-		select {
-		case c := <-channel:
-			requestIB(client, c)
-		default:
-			time.Sleep(time.Second * 1)
-		}
+		requestIB(client, <-channel)
 	}
 }
 
 func requestIB(client *ib.IbClient, commands Commands) {
-
+	fmt.Println("------------------------------------------------------------------------------------------------------------")
+	fmt.Println("Buy/Sell: " + commands.buysell + ", Ticker: " + commands.ticker + ", ExpDate: " + commands.expDate + ", StrikerPrice: " + commands.strikPrice + ", Buy Price: " + fmt.Sprint(commands.price) + ", Danger: " + commands.danger + ", Stop Loss: " + fmt.Sprint(commands.stopLoss))
+	fmt.Println("------------------------------------------------------------------------------------------------------------")
 }

@@ -16,7 +16,9 @@ type Commands struct {
 }
 
 //ChatParse : Parse a chat message and build a array of commands
-func ChatParse(msg string, cmds *Commands) {
+func ChatParse(msg string) {
+	var cmds Commands
+
 	msg = strings.ToLower(strings.Split(msg, "\n")[0])
 	msgs := strings.Split(msg, " ")
 
@@ -60,4 +62,5 @@ func ChatParse(msg string, cmds *Commands) {
 			}
 		}
 	}
+	channel <- cmds
 }

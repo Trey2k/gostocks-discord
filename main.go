@@ -22,6 +22,7 @@ func init() {
 		println("A value in config.IB is empty")
 		os.Exit(1)
 	}
+	channel = make(chan Commands)
 }
 
 func main() {
