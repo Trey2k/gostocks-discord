@@ -10,17 +10,18 @@ func connectIB(channel chan Commands) {
 	var err error
 	log := ib.GetLogger().Sugar()
 	defer log.Sync()
+
 	ibwrapper := &ib.Wrapper{}
 	client := ib.NewIbClient(ibwrapper)
 	err = client.Connect(config.IB.IP, config.IB.Port, config.IB.ClientID)
 	if err != nil {
-		log.Panic("Connect failed:", err)
+		log.Fatal("Connect failed:", err)
 		return
 	}
 
 	err = client.HandShake()
 	if err != nil {
-		log.Info("HandShake failed:", err)
+		log.Fatal("HandShake failed:", err)
 		return
 	}
 

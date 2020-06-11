@@ -6,7 +6,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-var channel chan Commands
+var channel = make(chan Commands)
 
 func init() {
 	var err error
@@ -22,7 +22,6 @@ func init() {
 		println("A value in config.IB is empty")
 		os.Exit(1)
 	}
-	channel = make(chan Commands)
 }
 
 func main() {
