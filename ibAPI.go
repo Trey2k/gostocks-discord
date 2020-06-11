@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	ib "github.com/hadrianl/ibapi"
 )
@@ -25,10 +26,21 @@ func connectIB(channel chan Commands) {
 		return
 	}
 
+	go func(client *ib.IbClient) {
+		for {
+			if client.IsConnected() {
+				time.Sleep(time.Second * 1)
+			} else {
+				log.Fatal("Lost connection to IB tws, did it log you out?")
+			}
+		}
+	}(client)
+
 	client.Run()
 	for {
 		requestIB(client, <-channel)
 	}
+
 }
 
 func requestIB(client *ib.IbClient, commands Commands) {
