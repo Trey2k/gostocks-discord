@@ -25,6 +25,9 @@ BTO AMZN 2550C 6/5 @ 1.09 **lotto**
 
 BTO COST 310c 4/9 @ 0.39 **very risky**
 
+in addition to the keyword lotto or risky being present:
+Something else that can make the trade risky is the expiration date being the next day. Ex. Today's date is 6/13, but the contract is set to expire 6/14.
+
 Some trades are risky, and risk isn&#39;t for everyone.
 
 - **Ability to set own stop losses.**
