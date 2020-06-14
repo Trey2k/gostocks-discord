@@ -18,15 +18,13 @@ func init() {
 		println("A value in config.Discord is empty")
 		os.Exit(1)
 	}
-	if isStructEmpty(config.IB) {
-		println("A value in config.IB is empty")
+	if isStructEmpty(config.TD) {
+		println("A value in config.TD is empty")
 		os.Exit(1)
 	}
 }
 
 func main() {
-	go connectIB(channel)
-
 	token := config.Discord.Token
 
 	discord, err := discordgo.New(token)
@@ -38,6 +36,8 @@ func main() {
 	err = discord.Open()
 	errCheck("Error opening connection to Discord", err)
 	defer discord.Close()
+
+	go tdauth()
 
 	<-make(chan struct{})
 }

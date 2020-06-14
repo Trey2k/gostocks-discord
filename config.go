@@ -17,16 +17,15 @@ type DiscordInfo struct {
 }
 
 //IbAPI : this is exported
-type IbAPI struct {
-	IP       string
-	Port     int
-	ClientID int64
+type TDAPI struct {
+	ClientKey       string
+	CallbackAddress string
 }
 
 //Configuration : this is exported
 type Configuration struct {
 	Discord DiscordInfo
-	IB      IbAPI
+	TD      TDAPI
 }
 
 func getConfig() (configuration *Configuration, err error) {
@@ -56,10 +55,9 @@ func getConfig() (configuration *Configuration, err error) {
 			ChannelID:  "",
 			GameStatus: "The stock markets",
 		},
-		IbAPI{
-			IP:       "127.0.0.1",
-			Port:     7496,
-			ClientID: 0,
+		TDAPI{
+			ClientKey:       "Client Key",
+			CallbackAddress: "127.0.0.1:8080",
 		},
 	}
 
