@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/bwmarrin/discordgo"
@@ -38,6 +39,17 @@ func main() {
 	defer discord.Close()
 
 	go tdauth()
+	go func(cmdChan chan Commands) {
+		for {
+			printCommands(<-cmdChan)
+		}
+	}(channel)
 
 	<-make(chan struct{})
+}
+
+func printCommands(commands Commands) {
+	fmt.Println("------------------------------------------------------------------------------------------------------------")
+	fmt.Println("Buy/Sell: " + commands.buysell + ", Ticker: " + commands.ticker + ", ExpDate: " + commands.expDate + ", StrikerPrice: " + commands.strikPrice + ", Buy Price: " + fmt.Sprint(commands.price) + ", Danger: " + commands.danger + ", Stop Loss: " + fmt.Sprint(commands.stopLoss))
+	fmt.Println("------------------------------------------------------------------------------------------------------------")
 }
