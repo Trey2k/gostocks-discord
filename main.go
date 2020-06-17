@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Trey2k/gostocks-discord/webapp"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -26,6 +27,18 @@ func init() {
 }
 
 func main() {
+
+	genAuthURL()
+	go webapp.Start(callbackAddress, authURL)
+
+	tdauth() //Holding call untill authed
+
+	var response GetAccountResponses
+	err := getAccounts(accessToken, &response)
+	errCheck("Error getting accounts", err)
+
+	fmt.Println("Cash for trading: " + fmt.Sprint(response[0].SecuritiesAccount.CurrentBalances.CashAvailableForTrading))
+
 	token := config.Discord.Token
 
 	discord, err := discordgo.New(token)
@@ -38,18 +51,20 @@ func main() {
 	errCheck("Error opening connection to Discord", err)
 	defer discord.Close()
 
-	go tdauth()
 	go func(cmdChan chan Commands) {
 		for {
-			printCommands(<-cmdChan)
+			cmd := <-cmdChan
+			placeOrder(cmd)
+			printCommands(cmd)
 		}
 	}(channel)
 
 	<-make(chan struct{})
+
 }
 
 func printCommands(commands Commands) {
 	fmt.Println("------------------------------------------------------------------------------------------------------------")
-	fmt.Println("Buy/Sell: " + commands.buysell + ", Ticker: " + commands.ticker + ", ExpDate: " + commands.expDate + ", StrikerPrice: " + commands.strikPrice + ", Buy Price: " + fmt.Sprint(commands.price) + ", Danger: " + commands.danger + ", Stop Loss: " + fmt.Sprint(commands.stopLoss))
+	fmt.Println("Buy: " + fmt.Sprint(commands.buy) + ", Ticker: " + commands.ticker + ", ExpDate: " + commands.expDate + ", StrikerPrice: " + commands.strikPrice + ", Buy Price: " + fmt.Sprint(commands.price) + ", Risky: " + fmt.Sprint(commands.risky) + ", Stop Loss: " + fmt.Sprint(commands.stopLoss))
 	fmt.Println("------------------------------------------------------------------------------------------------------------")
 }

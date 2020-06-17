@@ -3,10 +3,13 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
-	"os"
 )
 
 var config *Configuration
+
+//Settings this is exported
+type Settings struct {
+}
 
 //DiscordInfo : this is exported
 type DiscordInfo struct {
@@ -16,7 +19,7 @@ type DiscordInfo struct {
 	GameStatus string
 }
 
-//IbAPI : this is exported
+//TDAPI : this is exported
 type TDAPI struct {
 	ClientKey       string
 	CallbackAddress string
@@ -75,13 +78,4 @@ func getConfig() (configuration *Configuration, err error) {
 
 	return config, nil //Return default configuration
 
-}
-
-//Check to see if a file exists by name. Return bool
-func fileExists(filename string) bool {
-	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return !info.IsDir()
 }

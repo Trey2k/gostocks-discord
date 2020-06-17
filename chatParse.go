@@ -6,57 +6,52 @@ import (
 
 //Commands list of commands built from messages
 type Commands struct {
-	buysell    string
+	buy        bool
 	ticker     string
 	expDate    string
 	strikPrice string
 	price      float64
-	danger     string
+	risky      bool
 	stopLoss   float64
 }
 
 //ChatParse : Parse a chat message and build a array of commands
 func ChatParse(msg string) {
+	var err error
 	var cmds Commands
 
 	msg = strings.ToLower(strings.Split(msg, "\n")[0])
 	msgs := strings.Split(msg, " ")
 
-	cmds.danger = "safe"
+	cmds.risky = false
 	if strings.Contains(msg, "risky") || strings.Contains(msg, "lotto") {
-		cmds.danger = "risky"
+		cmds.risky = true
+	}
+
+	cmds.buy = false
+	if strings.Contains(msg, "bto") {
+		cmds.buy = true
 	}
 
 	for i := 0; i < len(msgs); i++ {
 		cmd := msgs[i]
-		switch cmd {
-		case "stc":
-			cmds.buysell = "STC"
-		case "bto":
-			cmds.buysell = "BTO"
-		default:
-			if i <= 4 && IsValidTicker(cmd) {
-				cmds.ticker = cmd
-			} else {
-				if strings.Contains(cmd, "/") && isNumericIgnore(cmd, "/", 2) {
-					cmds.expDate = cmd
-				} else if strings.Contains(cmd, "p") && isNumericIgnore(cmd, "p", 1) || strings.Contains(cmd, "c") && isNumericIgnore(cmd, "c", 1) {
-					cmds.strikPrice = cmd
-				} else if strings.Contains(cmd, ".") && isNumericIgnore(cmd, "@", 1) {
-					if cmds.price == 0 {
-						var err error
-						cmds.price, err = toNumericIgnore(cmd, "@", 1)
-
-						if err != nil {
-							println("error converting price '" + cmd + "' to float64: " + err.Error())
-						}
-					} else if cmds.stopLoss == 0 {
-						var err error
-						cmds.stopLoss, err = toNumeric(cmd)
-
-						if err != nil {
-							println("error converting stop loss '" + cmd + "' to float64: " + err.Error())
-						}
+		if i <= 4 && IsValidTicker(cmd) {
+			cmds.ticker = cmd
+		} else {
+			if strings.Contains(cmd, "/") && isNumericIgnore(cmd, "/", 2) {
+				cmds.expDate = cmd
+			} else if strings.Contains(cmd, "p") && isNumericIgnore(cmd, "p", 1) || strings.Contains(cmd, "c") && isNumericIgnore(cmd, "c", 1) {
+				cmds.strikPrice = cmd
+			} else if strings.Contains(cmd, ".") && isNumericIgnore(cmd, "@", 1) {
+				if cmds.price == 0 {
+					cmds.price, err = toNumericIgnore(cmd, "@", 1)
+					if err != nil {
+						println("Error converting price '" + cmd + "' to float64: " + err.Error())
+					}
+				} else if cmds.stopLoss == 0 {
+					cmds.stopLoss, err = toNumeric(cmd)
+					if err != nil {
+						println("Error converting stop loss '" + cmd + "' to float64: " + err.Error())
 					}
 				}
 			}

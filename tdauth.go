@@ -1,15 +1,15 @@
 package main
 
 import (
-	"html/template"
-	"net"
-	"net/http"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
 
-	"github.com/gorilla/mux"
+	"github.com/Trey2k/gostocks-discord/webapp"
 	"github.com/pkg/browser"
 )
 
-var oauthChan chan string = make(chan string)
 var accessToken string
 var refreshToken string
 var clientKey string
@@ -18,61 +18,69 @@ var callbackAddress string
 var callbackURL string
 var authURL string
 
-func tdauth() {
+func genAuthURL() {
 	clientKey = config.TD.ClientKey
 	clientCode = clientKey + "@AMER.OAUTHAP"
 	callbackAddress = config.TD.CallbackAddress
 	callbackURL = "https://" + callbackAddress
 	authURL = "https://auth.tdameritrade.com/auth?response_type=code&redirect_uri=" + callbackURL + "&client_id=" + clientCode
-
-	browser.OpenURL(authURL)
-
-	go startServer(callbackAddress)
-
-	oauth := <-oauthChan //Holding call]]
-	var response RequestTokensResponse
-
-	requestTokens(oauth, clientCode, &response)
-
-	accessToken = response.AccessToken
-	refreshToken = response.RefreshToken
-
 }
 
-func startServer(callbackAddress string) {
+func tdauth() {
 
-	mux := mux.NewRouter()
-	mux.HandleFunc("/", indexHandler).Methods("GET")
+	token, err := checkRefreshToken()
+	errCheck("Error checking saved token", err)
+	if !token {
+		browser.OpenURL(authURL)
 
-	listen, err := net.Listen("tcp", callbackAddress)
-	errCheck("Error creating web server", err)
+		oauth := <-webapp.OauthChan //Holding call]]
+		var response RequestTokensResponse
 
-	err = http.ServeTLS(listen, mux, "certs/localhost.crt", "certs/localhost.key")
-	errCheck("Error serveing web server", err)
+		err := requestTokens(oauth, clientCode, &response)
+		errCheck("Error requesting TD Tokens", err)
+
+		accessToken = response.AccessToken
+		refreshToken = response.RefreshToken
+		err = saveRefreshToken(refreshToken)
+		errCheck("Error saveing refresh token", err)
+	}
+
+	fmt.Println("TD Ameritrade authenticated.")
 }
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-	type pageData struct {
-		AppName string
-		AuthURL string
-		Authed  bool
+func saveRefreshToken(refreshToken string) error {
+	if _, err := os.Stat("./info"); os.IsNotExist(err) {
+		os.Mkdir("./info", 0700)
 	}
-	data := pageData{
-		AppName: "GoStocks-Discord",
-		AuthURL: authURL,
-		Authed:  true,
-	}
-	templates := template.Must(template.ParseGlob("templates/*.html"))
-
-	oauth := r.URL.Query().Get("code")
-	if oauth != "" || accessToken != "" {
-		oauthChan <- oauth
-		data.Authed = false
-	}
-
-	err := templates.ExecuteTemplate(w, "index.html", data)
+	file, err := os.Create("./info/refresh.token")
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return err
 	}
+	defer file.Close()
+
+	_, err = io.WriteString(file, refreshToken)
+	if err != nil {
+		return err
+	}
+	return file.Sync()
+}
+
+func checkRefreshToken() (bool, error) {
+	if fileExists("./info/refresh.token") {
+		data, err := ioutil.ReadFile("./info/refresh.token")
+		if err != nil {
+			return false, err
+		}
+		token := string(data)
+		var response RequestTokensResponse
+		err = refreshTokens(token, clientCode, &response)
+		if err != nil || response.AccessToken == "" {
+			return false, nil
+		}
+		accessToken = response.AccessToken
+		refreshToken = token
+		return true, nil
+	}
+	return false, nil
+
 }
