@@ -2,6 +2,8 @@ package main
 
 import (
 	"strings"
+
+	"github.com/Trey2k/gostocks-discord/utils"
 )
 
 //Commands list of commands built from messages
@@ -38,18 +40,18 @@ func ChatParse(msg string) {
 		if i <= 4 && IsValidTicker(cmd) {
 			cmds.ticker = cmd
 		} else {
-			if strings.Contains(cmd, "/") && isNumericIgnore(cmd, "/", 2) {
+			if strings.Contains(cmd, "/") && utils.IsNumericIgnore(cmd, "/", 2) {
 				cmds.expDate = cmd
-			} else if strings.Contains(cmd, "p") && isNumericIgnore(cmd, "p", 1) || strings.Contains(cmd, "c") && isNumericIgnore(cmd, "c", 1) {
+			} else if strings.Contains(cmd, "p") && utils.IsNumericIgnore(cmd, "p", 1) || strings.Contains(cmd, "c") && utils.IsNumericIgnore(cmd, "c", 1) {
 				cmds.strikPrice = cmd
-			} else if strings.Contains(cmd, ".") && isNumericIgnore(cmd, "@", 1) {
+			} else if strings.Contains(cmd, ".") && utils.IsNumericIgnore(cmd, "@", 1) {
 				if cmds.price == 0 {
-					cmds.price, err = toNumericIgnore(cmd, "@", 1)
+					cmds.price, err = utils.ToNumericIgnore(cmd, "@", 1)
 					if err != nil {
 						println("Error converting price '" + cmd + "' to float64: " + err.Error())
 					}
 				} else if cmds.stopLoss == 0 {
-					cmds.stopLoss, err = toNumeric(cmd)
+					cmds.stopLoss, err = utils.ToNumeric(cmd)
 					if err != nil {
 						println("Error converting stop loss '" + cmd + "' to float64: " + err.Error())
 					}

@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/Trey2k/gostocks-discord/utils"
 )
 
 type apiResponse struct {
@@ -60,7 +62,7 @@ func GetTickerInfo(ticker string) (TickerInfo, error) {
 //IsValidTicker test if string is a valid ticker
 func IsValidTicker(s string) bool {
 	if len(s) <= 5 {
-		if noNumbers(s) {
+		if utils.NoNumbers(s) {
 			tikInf, err := GetTickerInfo(s)
 			if err != nil {
 				println("Error getting ticker info: " + err.Error())

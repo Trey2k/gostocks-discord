@@ -1,4 +1,4 @@
-package main
+package td
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/Trey2k/gostocks-discord/utils"
 	"github.com/Trey2k/gostocks-discord/webapp"
 	"github.com/pkg/browser"
 )
@@ -14,35 +15,40 @@ var accessToken string
 var refreshToken string
 var clientKey string
 var clientCode string
-var callbackAddress string
-var callbackURL string
-var authURL string
 
-func genAuthURL() {
-	clientKey = config.TD.ClientKey
+//CallbackAddress callback address
+var CallbackAddress string
+
+//AuthURL URL to auth
+var AuthURL string
+
+//Init run before auth
+func Init() {
+	clientKey = utils.Config.TD.ClientKey
 	clientCode = clientKey + "@AMER.OAUTHAP"
-	callbackAddress = config.TD.CallbackAddress
-	callbackURL = "https://" + callbackAddress
-	authURL = "https://auth.tdameritrade.com/auth?response_type=code&redirect_uri=" + callbackURL + "&client_id=" + clientCode
+	CallbackAddress = utils.Config.TD.CallbackAddress
+	callbackURL := "https://" + CallbackAddress
+	AuthURL = "https://auth.tdameritrade.com/auth?response_type=code&redirect_uri=" + callbackURL + "&client_id=" + clientCode
 }
 
-func tdauth() {
+//Auth Authenticate
+func Auth() {
 
 	token, err := checkRefreshToken()
-	errCheck("Error checking saved token", err)
+	utils.ErrCheck("Error checking saved token", err)
 	if !token {
-		browser.OpenURL(authURL)
+		browser.OpenURL(AuthURL)
 
 		oauth := <-webapp.OauthChan //Holding call]]
 		var response RequestTokensResponse
 
 		err := requestTokens(oauth, clientCode, &response)
-		errCheck("Error requesting TD Tokens", err)
+		utils.ErrCheck("Error requesting TD Tokens", err)
 
 		accessToken = response.AccessToken
 		refreshToken = response.RefreshToken
 		err = saveRefreshToken(refreshToken)
-		errCheck("Error saveing refresh token", err)
+		utils.ErrCheck("Error saveing refresh token", err)
 	}
 
 	fmt.Println("TD Ameritrade authenticated.")
@@ -66,7 +72,7 @@ func saveRefreshToken(refreshToken string) error {
 }
 
 func checkRefreshToken() (bool, error) {
-	if fileExists("./info/refresh.token") {
+	if utils.FileExists("./info/refresh.token") {
 		data, err := ioutil.ReadFile("./info/refresh.token")
 		if err != nil {
 			return false, err

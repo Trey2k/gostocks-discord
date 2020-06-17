@@ -1,11 +1,12 @@
-package main
+package utils
 
 import (
 	"encoding/json"
 	"io/ioutil"
 )
 
-var config *Configuration
+//Config object
+var Config *Configuration
 
 //Settings this is exported
 type Settings struct {
@@ -13,7 +14,8 @@ type Settings struct {
 
 //DiscordInfo : this is exported
 type DiscordInfo struct {
-	Token      string
+	Username   string
+	Password   string
 	GuildID    string
 	ChannelID  string
 	GameStatus string
@@ -31,11 +33,12 @@ type Configuration struct {
 	TD      TDAPI
 }
 
-func getConfig() (configuration *Configuration, err error) {
-	if fileExists("config.json") { //Get user set configuration from config.ini if file exists
+//GetConfig object
+func GetConfig() (configuration *Configuration, err error) {
+	if FileExists("config.json") { //Get user set configuration from config.ini if file exists
 		b, err := ioutil.ReadFile("config.json")
 		if err != nil {
-			errCheck("Failed to unmarshal configuration file", err)
+			ErrCheck("Failed to unmarshal configuration file", err)
 			return nil, err
 		}
 
@@ -43,7 +46,7 @@ func getConfig() (configuration *Configuration, err error) {
 
 		err = json.Unmarshal(b, config)
 		if err != nil {
-			errCheck("Failed to unmarshal configuration file", err)
+			ErrCheck("Failed to unmarshal configuration file", err)
 			return nil, err
 		}
 
@@ -53,7 +56,8 @@ func getConfig() (configuration *Configuration, err error) {
 
 	config := &Configuration{ //Default configuration
 		DiscordInfo{
-			Token:      "",
+			Username:   "Email",
+			Password:   "",
 			GuildID:    "",
 			ChannelID:  "",
 			GameStatus: "The stock markets",
@@ -66,13 +70,13 @@ func getConfig() (configuration *Configuration, err error) {
 
 	b, err := json.MarshalIndent(config, "", " ")
 	if err != nil {
-		errCheck("Failed to marshal configuration file", err)
+		ErrCheck("Failed to marshal configuration file", err)
 		return nil, err
 	}
 
 	err = ioutil.WriteFile("config.json", b, 0644)
 	if err != nil {
-		errCheck("Failed to write config file. Is it locked by another process?", err)
+		ErrCheck("Failed to write config file. Is it locked by another process?", err)
 		return nil, err
 	}
 

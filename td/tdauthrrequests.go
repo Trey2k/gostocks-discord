@@ -1,4 +1,4 @@
-package main
+package td
 
 import "net/url"
 
@@ -13,7 +13,7 @@ func requestTokens(oauth string, clientCode string, response *RequestTokensRespo
 	data.Set("client_id", clientCode)
 	data.Set("redirect_uri", "https://127.0.0.1:8080")
 
-	err := procAuthRequest(data, endpoint, &response)
+	err := atuhRequest(data, endpoint, &response)
 	return err
 }
 
@@ -28,6 +28,6 @@ func refreshTokens(refreshToken string, clientCode string, response *RequestToke
 	data.Set("client_id", clientCode)
 	data.Set("redirect_uri", "https://127.0.0.1:8080")
 
-	err := procAuthRequest(data, endpoint, &response)
+	err := atuhRequest(data, endpoint, &response)
 	return err
 }

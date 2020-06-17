@@ -1,4 +1,4 @@
-package main
+package td
 
 //RequestTokensResponse response struct for token request
 type RequestTokensResponse struct {

@@ -1,4 +1,4 @@
-package main
+package td
 
 import (
 	"encoding/json"
@@ -12,7 +12,7 @@ import (
 var tokenRefreshes int = 0
 
 //proccess request
-func procAuthRequest(data url.Values, endpoint string, response interface{}) error {
+func atuhRequest(data url.Values, endpoint string, response interface{}) error {
 
 	client := &http.Client{}
 	request, err := http.NewRequest("POST", endpoint, strings.NewReader(data.Encode()))

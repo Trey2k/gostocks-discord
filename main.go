@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Trey2k/gostocks-discord/td"
+	"github.com/Trey2k/gostocks-discord/utils"
 	"github.com/Trey2k/gostocks-discord/webapp"
 	"github.com/bwmarrin/discordgo"
 )
@@ -12,43 +14,41 @@ var channel = make(chan Commands)
 
 func init() {
 	var err error
-	config, err = getConfig()
+	utils.Config, err = utils.GetConfig()
+	td.Init()
 
-	errCheck("Error getting config", err)
+	utils.ErrCheck("Error getting config", err)
 
-	if isStructEmpty(config.Discord) {
+	if utils.IsStructEmpty(utils.Config.Discord) {
 		println("A value in config.Discord is empty")
 		os.Exit(1)
 	}
-	if isStructEmpty(config.TD) {
+	if utils.IsStructEmpty(utils.Config.TD) {
 		println("A value in config.TD is empty")
 		os.Exit(1)
 	}
 }
 
 func main() {
+	go webapp.Start(td.CallbackAddress, td.AuthURL)
 
-	genAuthURL()
-	go webapp.Start(callbackAddress, authURL)
+	td.Auth() //Holding call untill authed
 
-	tdauth() //Holding call untill authed
-
-	var response GetAccountResponses
-	err := getAccounts(accessToken, &response)
-	errCheck("Error getting accounts", err)
+	var response td.GetAccountResponses
+	err := td.GetAccounts(&response)
+	utils.ErrCheck("Error getting accounts", err)
 
 	fmt.Println("Cash for trading: " + fmt.Sprint(response[0].SecuritiesAccount.CurrentBalances.CashAvailableForTrading))
 
-	token := config.Discord.Token
-
-	discord, err := discordgo.New(token)
-	errCheck("error creating discord session", err)
+	discord, err := discordgo.New("")
+	utils.ErrCheck("error creating discord session", err)
+	utils.ErrCheck("error creating discord session", discord.Login(utils.Config.Discord.Username, utils.Config.Discord.Password))
 
 	discord.AddHandler(chatListener)
 	discord.AddHandler(discordStatus)
 
 	err = discord.Open()
-	errCheck("Error opening connection to Discord", err)
+	utils.ErrCheck("Error opening connection to Discord", err)
 	defer discord.Close()
 
 	go func(cmdChan chan Commands) {

@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"fmt"
@@ -9,28 +9,29 @@ import (
 	"strings"
 )
 
-func errCheck(msg string, err error) {
+//ErrCheck check if there is an error
+func ErrCheck(msg string, err error) {
 	if err != nil {
 		fmt.Printf("%s: %+v", msg, err)
 		panic(err)
 	}
 }
 
-//isNumericIgnore(s string, ig string, x int)
-func isNumericIgnore(s string, ig string, x int) bool {
+//IsNumericIgnore (s string, ig string, x int)
+func IsNumericIgnore(s string, ig string, x int) bool {
 	s = strings.Replace(s, ig, "", x)
 	_, err := strconv.ParseFloat(s, 64)
 	return err == nil
 }
 
-//isNumeric(s string)
-func isNumeric(s string) bool {
+//IsNumeric (s string)
+func IsNumeric(s string) bool {
 	_, err := strconv.ParseFloat(s, 64)
 	return err == nil
 }
 
-//toNumericIgnore(s string, ig string, x int) (float64, error)
-func toNumericIgnore(s string, ig string, x int) (float64, error) {
+//ToNumericIgnore (s string, ig string, x int) (float64, error)
+func ToNumericIgnore(s string, ig string, x int) (float64, error) {
 	s = strings.Replace(s, ig, "", x)
 	i, err := strconv.ParseFloat(s, 64)
 	if err != nil {
@@ -39,8 +40,8 @@ func toNumericIgnore(s string, ig string, x int) (float64, error) {
 	return i, nil
 }
 
-//toNumeric(s string) (float64, error)
-func toNumeric(s string) (float64, error) {
+//ToNumeric (s string) (float64, error)
+func ToNumeric(s string) (float64, error) {
 	i, err := strconv.ParseFloat(s, 64)
 	if err != nil {
 		return 0, err
@@ -48,11 +49,11 @@ func toNumeric(s string) (float64, error) {
 	return i, nil
 }
 
-//noNumbers : test if string contains any numbers
-var noNumbers = regexp.MustCompile(`^[a-zA-Z]+$`).MatchString
+//NoNumbers : test if string contains any numbers
+var NoNumbers = regexp.MustCompile(`^[a-zA-Z]+$`).MatchString
 
-//test if config is empty
-func isStructEmpty(x interface{}) bool {
+//IsStructEmpty test if config is empty
+func IsStructEmpty(x interface{}) bool {
 	v := reflect.ValueOf(x)
 
 	for i := 0; i < v.NumField(); i++ {
@@ -64,7 +65,8 @@ func isStructEmpty(x interface{}) bool {
 	return false
 }
 
-func fileExists(filename string) bool {
+//FileExists check if a file exists
+func FileExists(filename string) bool {
 	info, err := os.Stat(filename)
 	if os.IsNotExist(err) {
 		return false
