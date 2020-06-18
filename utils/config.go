@@ -21,16 +21,17 @@ type DiscordInfo struct {
 	GameStatus string
 }
 
-//TDAPI : this is exported
-type TDAPI struct {
+//TDA : this is exported
+type TDA struct {
 	ClientKey       string
 	CallbackAddress string
+	AccountID       string
 }
 
 //Configuration : this is exported
 type Configuration struct {
 	Discord DiscordInfo
-	TD      TDAPI
+	TD      TDA
 }
 
 //GetConfig object
@@ -62,9 +63,10 @@ func GetConfig() (configuration *Configuration, err error) {
 			ChannelID:  "",
 			GameStatus: "The stock markets",
 		},
-		TDAPI{
+		TDA{
 			ClientKey:       "Client Key",
 			CallbackAddress: "127.0.0.1:8080",
+			AccountID:       "Account ID",
 		},
 	}
 

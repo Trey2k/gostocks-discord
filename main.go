@@ -33,12 +33,13 @@ func main() {
 	go webapp.Start(td.CallbackAddress, td.AuthURL)
 
 	td.Auth() //Holding call untill authed
-
-	var response td.GetAccountResponses
-	err := td.GetAccounts(&response)
+	var response td.GetAccountResponse
+	err := td.GetAccount(utils.Config.TD.AccountID, &response)
 	utils.ErrCheck("Error getting accounts", err)
 
-	fmt.Println("Cash for trading: " + fmt.Sprint(response[0].SecuritiesAccount.CurrentBalances.CashAvailableForTrading))
+	fmt.Println("Cash aval for trading: " + fmt.Sprint(response.SecuritiesAccount.CurrentBalances.CashAvailableForTrading))
+	fmt.Println("Total ball: " + fmt.Sprint(response.SecuritiesAccount.CurrentBalances.CashBalance))
+	fmt.Println("Inital ball: " + fmt.Sprint(response.SecuritiesAccount.InitialBalances.CashBalance))
 
 	discord, err := discordgo.New("")
 	utils.ErrCheck("error creating discord session", err)
