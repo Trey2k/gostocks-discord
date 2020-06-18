@@ -38,7 +38,7 @@ func TestChatParse(t *testing.T) {
 
 	for _, test := range tests {
 		go ChatParse(test.input)
-		output := <-channel
+		output := <-cmdsChannel
 		if output != test.expected {
 			t.Error("Test failed, inputted: '" + test.input + "', expected: '" + fmt.Sprint(test.expected) + "', received: '" + fmt.Sprint(output) + "'")
 		}

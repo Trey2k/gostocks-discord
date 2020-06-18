@@ -48,6 +48,7 @@ func getRequest(endpoint string, token string, response interface{}) error {
 	}
 	switch resp.StatusCode {
 	case 200:
+
 		err = json.NewDecoder(resp.Body).Decode(&response)
 		if err != nil {
 			return err

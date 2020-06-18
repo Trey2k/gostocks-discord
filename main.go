@@ -10,7 +10,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-var channel = make(chan Commands)
+var cmdsChannel = make(chan Commands)
 
 func init() {
 	var err error
@@ -62,7 +62,7 @@ func main() {
 			placeOrder(cmd)
 			printCommands(cmd)
 		}
-	}(channel)
+	}(cmdsChannel)
 	<-make(chan struct{})
 }
 

@@ -24,21 +24,27 @@ func ChatParse(msg string) {
 	var cmds Commands
 
 	msg = strings.ToLower(strings.Split(msg, "\n")[0])
-	msgs := strings.Split(msg, " ")
 
 	cmds.risky = false
 	if strings.Contains(msg, "risky") || strings.Contains(msg, "lotto") {
 		cmds.risky = true
+		msg = strings.Replace(msg, "riksy", "", 1)
+		msg = strings.Replace(msg, "lotto", "", 1)
 	}
 
-	cmds.buy = false
 	if strings.Contains(msg, "bto") {
 		cmds.buy = true
+		msg = strings.Replace(msg, "bto", "", 1)
+	} else {
+		cmds.buy = false
+		msg = strings.Replace(msg, "stc", "", 1)
 	}
+
+	msgs := strings.Split(msg, " ")
 
 	for i := 0; i < len(msgs); i++ {
 		cmd := msgs[i]
-		if i <= 2 && td.IsValidTicker(cmd) {
+		if i <= 5 && td.IsValidTicker(cmd) {
 			cmds.ticker = cmd
 		} else {
 			if strings.Contains(cmd, "/") && utils.IsNumericIgnore(cmd, "/", 2) {
@@ -60,5 +66,5 @@ func ChatParse(msg string) {
 			}
 		}
 	}
-	channel <- cmds
+	cmdsChannel <- cmds
 }
