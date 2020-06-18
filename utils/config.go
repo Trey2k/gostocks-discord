@@ -8,8 +8,19 @@ import (
 //Config object
 var Config *Configuration
 
-//Settings this is exported
-type Settings struct {
+//TradeSettings trade settings
+type TradeSettings struct {
+	MakeRiskyTrades       bool
+	RiskyInvestPercentage float64
+	SafeInvestPercentage  float64
+	StopLossPercentage    float64
+	UseUserWhitlist       bool
+	WhitelistUserIDs      []string
+}
+
+//SettingsStruct this is exported
+type SettingsStruct struct {
+	Trade TradeSettings
 }
 
 //DiscordInfo : this is exported
@@ -30,8 +41,9 @@ type TDA struct {
 
 //Configuration : this is exported
 type Configuration struct {
-	Discord DiscordInfo
-	TD      TDA
+	Discord  DiscordInfo
+	TD       TDA
+	Settings SettingsStruct
 }
 
 //GetConfig object
@@ -67,6 +79,16 @@ func GetConfig() (configuration *Configuration, err error) {
 			ClientKey:       "Client Key",
 			CallbackAddress: "127.0.0.1:8080",
 			AccountID:       "Account ID",
+		},
+		SettingsStruct{
+			Trade: TradeSettings{
+				MakeRiskyTrades:       true,
+				RiskyInvestPercentage: 0.05,
+				SafeInvestPercentage:  0.10,
+				StopLossPercentage:    0.50,
+				UseUserWhitlist:       true,
+				WhitelistUserIDs:      []string{"116377104035086339", "105036460108865536"},
+			},
 		},
 	}
 

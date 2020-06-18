@@ -10,7 +10,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-var cmdsChannel = make(chan Commands)
+var ordersChannel = make(chan Order)
 
 func init() {
 	var err error
@@ -56,18 +56,18 @@ func main() {
 	utils.ErrCheck("Error opening connection to Discord", err)
 	defer discord.Close()
 
-	go func(cmdChan chan Commands) {
+	go func(cmdChan chan Order) {
 		for {
 			cmd := <-cmdChan
 			placeOrder(cmd)
 			printCommands(cmd)
 		}
-	}(cmdsChannel)
+	}(ordersChannel)
 	<-make(chan struct{})
 }
 
-func printCommands(commands Commands) {
+func printCommands(order Order) {
 	fmt.Println("------------------------------------------------------------------------------------------------------------")
-	fmt.Println("Buy: " + fmt.Sprint(commands.buy) + ", Ticker: " + commands.ticker + ", Date: " + commands.expDate.Format("1/2/2006") + ", StrikerPrice: " + commands.strikPrice + ", Buy Price: " + fmt.Sprint(commands.price) + ", Risky: " + fmt.Sprint(commands.risky) + ", Stop Loss: " + fmt.Sprint(commands.stopLoss))
+	fmt.Println("Buy: " + fmt.Sprint(order.buy) + ", Ticker: " + order.ticker + ", Date: " + order.expDate.Format("1/2/2006") + ", StrikerPrice: " + order.strikPrice + ", Buy Price: " + fmt.Sprint(order.price) + ", Risky: " + fmt.Sprint(order.risky) + ", Stop Loss: " + fmt.Sprint(order.stopLoss))
 	fmt.Println("------------------------------------------------------------------------------------------------------------")
 }

@@ -1,0 +1,23 @@
+{
+    "Discord":{
+       "Username":"trey2kmedia@gmail.com",
+       "Password":"trey2k0807",
+       "Token":"NzIwMDg4NjM3MDA5NjkwNjU1.Xun0WQ.RITWy2p0SocoKOKxCCDKozSkfSU",
+       "GuildID":"720076578372976681",
+       "ChannelID":"720077133652951041",
+       "GameStatus":"The stock markets"
+    },
+    "TD":{
+       "ClientKey":"6FC5HU1DDWUY4W8PGHBN2DXMTDFMNCRP",
+       "CallbackAddress":"127.0.0.1:8080",
+       "AccountID":"490209445"
+    },
+    "Settings":{
+       "Trade":{
+          "MakeRiskyTrades":true,
+          "RiskyInvestPercentage":0.05,
+          "SafeInvestPercentage":0.1,
+          "StopLossPercentage":0.5
+       }
+    }
+ }

@@ -39,7 +39,6 @@ func GetQuotes(symbols string, response *GetQuotesResponse) error {
 //IsValidTicker test if string is a valid ticker
 func IsValidTicker(ticker string) bool {
 	if len(ticker) <= 5 && utils.NoNumbers(ticker) && ticker != "bto" && ticker != "stc" {
-
 		var quoteResponse GetQuoteResponse
 
 		err := GetQuote(ticker, &quoteResponse)
