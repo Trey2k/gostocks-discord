@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Trey2k/gostocks-discord/td"
 	"github.com/Trey2k/gostocks-discord/utils"
@@ -11,7 +13,7 @@ import (
 type Commands struct {
 	buy        bool
 	ticker     string
-	expDate    string
+	expDate    time.Time
 	strikPrice string
 	price      float64
 	risky      bool
@@ -48,7 +50,30 @@ func ChatParse(msg string) {
 			cmds.ticker = cmd
 		} else {
 			if strings.Contains(cmd, "/") && utils.IsNumericIgnore(cmd, "/", 2) {
-				cmds.expDate = cmd
+
+				dates := strings.Split(cmd, "/")
+				if len(dates) == 2 {
+					date, err := time.Parse("1/2/2006", cmd+"/"+fmt.Sprint(time.Now().Year()))
+					if err != nil {
+						println("Error converting string date '" + cmd + "' to date: " + err.Error())
+						date = time.Now()
+					}
+					cmds.expDate = date
+				} else if len(dates) == 3 {
+					date, err := time.Parse("1/2/2006", cmd)
+					if err != nil {
+						println("Error converting string date '" + cmd + "' to date: " + err.Error())
+						date = time.Now()
+					}
+					cmds.expDate = date
+				} else {
+					println("Error converting string date '" + cmd + "' to date: Unknown format. Settig exp date for today")
+					cmds.expDate = time.Now()
+				}
+				if cmds.expDate.Year() <= time.Now().Year() && cmds.expDate.YearDay() <= time.Now().YearDay() {
+					cmds.risky = true
+				}
+
 			} else if strings.Contains(cmd, "p") && utils.IsNumericIgnore(cmd, "p", 1) || strings.Contains(cmd, "c") && utils.IsNumericIgnore(cmd, "c", 1) {
 				cmds.strikPrice = cmd
 			} else if strings.Contains(cmd, ".") && utils.IsNumericIgnore(cmd, "@", 1) {
@@ -65,6 +90,11 @@ func ChatParse(msg string) {
 				}
 			}
 		}
+	}
+	var emptyDate time.Time
+	if cmds.expDate == emptyDate {
+		cmds.expDate = time.Now()
+		cmds.risky = true
 	}
 	cmdsChannel <- cmds
 }

@@ -68,6 +68,6 @@ func main() {
 
 func printCommands(commands Commands) {
 	fmt.Println("------------------------------------------------------------------------------------------------------------")
-	fmt.Println("Buy: " + fmt.Sprint(commands.buy) + ", Ticker: " + commands.ticker + ", ExpDate: " + commands.expDate + ", StrikerPrice: " + commands.strikPrice + ", Buy Price: " + fmt.Sprint(commands.price) + ", Risky: " + fmt.Sprint(commands.risky) + ", Stop Loss: " + fmt.Sprint(commands.stopLoss))
+	fmt.Println("Buy: " + fmt.Sprint(commands.buy) + ", Ticker: " + commands.ticker + ", Date: " + commands.expDate.Format("1/2/2006") + ", StrikerPrice: " + commands.strikPrice + ", Buy Price: " + fmt.Sprint(commands.price) + ", Risky: " + fmt.Sprint(commands.risky) + ", Stop Loss: " + fmt.Sprint(commands.stopLoss))
 	fmt.Println("------------------------------------------------------------------------------------------------------------")
 }
