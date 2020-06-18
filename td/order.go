@@ -21,12 +21,14 @@ func GetOrders(accountID string, response *GetOrderResponses) error {
 	return err
 }
 
+//PlaceOrder place an order
 func PlaceOrder(accountID string, payload PlaceOrderPayload) error {
 
 	err := postRequest("https://api.tdameritrade.com/v1/accounts/"+accountID+"/orders/", accessToken, payload)
 	return err
 }
 
+//ReplaceOrder repalce an order
 func ReplaceOrder(accountID string, orderID string, payload PlaceOrderPayload) error {
 
 	err := putRequest("https://api.tdameritrade.com/v1/accounts/"+accountID+"/orders/"+orderID, accessToken, payload)

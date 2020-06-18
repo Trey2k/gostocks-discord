@@ -3,6 +3,7 @@ package main
 import (
 	"strings"
 
+	"github.com/Trey2k/gostocks-discord/td"
 	"github.com/Trey2k/gostocks-discord/utils"
 )
 
@@ -37,7 +38,7 @@ func ChatParse(msg string) {
 
 	for i := 0; i < len(msgs); i++ {
 		cmd := msgs[i]
-		if i <= 4 && IsValidTicker(cmd) {
+		if i <= 2 && td.IsValidTicker(cmd) {
 			cmds.ticker = cmd
 		} else {
 			if strings.Contains(cmd, "/") && utils.IsNumericIgnore(cmd, "/", 2) {

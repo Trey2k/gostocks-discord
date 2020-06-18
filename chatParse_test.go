@@ -3,9 +3,22 @@ package main
 import (
 	"fmt"
 	"testing"
+
+	"github.com/Trey2k/gostocks-discord/td"
+	"github.com/Trey2k/gostocks-discord/utils"
 )
 
+func init() {
+	var err error
+	utils.Config, err = utils.GetConfig()
+	utils.ErrCheck("Error getting config", err)
+	td.Init()
+
+	td.Auth() //Holding call untill authed
+}
+
 func TestChatParse(t *testing.T) {
+
 	var tests = []struct {
 		input    string
 		expected Commands

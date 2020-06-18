@@ -15,14 +15,15 @@ var channel = make(chan Commands)
 func init() {
 	var err error
 	utils.Config, err = utils.GetConfig()
-	td.Init()
-
 	utils.ErrCheck("Error getting config", err)
+
+	td.Init()
 
 	if utils.IsStructEmpty(utils.Config.Discord) {
 		println("A value in config.Discord is empty")
 		os.Exit(1)
 	}
+
 	if utils.IsStructEmpty(utils.Config.TD) {
 		println("A value in config.TD is empty")
 		os.Exit(1)
@@ -33,6 +34,7 @@ func main() {
 	go webapp.Start(td.CallbackAddress, td.AuthURL)
 
 	td.Auth() //Holding call untill authed
+
 	var response td.GetAccountResponse
 	err := td.GetAccount(utils.Config.TD.AccountID, &response)
 	utils.ErrCheck("Error getting accounts", err)
@@ -43,7 +45,9 @@ func main() {
 
 	discord, err := discordgo.New("")
 	utils.ErrCheck("error creating discord session", err)
-	utils.ErrCheck("error creating discord session", discord.Login(utils.Config.Discord.Username, utils.Config.Discord.Password))
+
+	err = discord.Login(utils.Config.Discord.Username, utils.Config.Discord.Password)
+	utils.ErrCheck("error creating discord session", err)
 
 	discord.AddHandler(chatListener)
 	discord.AddHandler(discordStatus)
@@ -59,9 +63,7 @@ func main() {
 			printCommands(cmd)
 		}
 	}(channel)
-
 	<-make(chan struct{})
-
 }
 
 func printCommands(commands Commands) {

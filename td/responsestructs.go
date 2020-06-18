@@ -126,8 +126,13 @@ type GetOrderResponse struct {
 	StatusDescription string `json:"statusDescription"`
 }
 
-//Quote response struct for GetQuotes
-type Quote struct {
+//GetQuoteTemp Response struct for getquote
+type GetQuoteTemp struct {
+	Quote map[string]GetQuoteResponse `json:"-"`
+}
+
+//GetQuoteResponse response struct for GetQuotes
+type GetQuoteResponse struct {
 	AssetType                          string  `json:"assetType"`
 	AssetMainType                      string  `json:"assetMainType"`
 	Cusip                              string  `json:"cusip"`
