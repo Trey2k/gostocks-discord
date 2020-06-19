@@ -20,25 +20,9 @@ func GetAccount(accountID string, response *GetAccountResponse) error {
 	return err
 }
 
-//GetQuote a quote on a option or stock
-func GetQuote(symbol string, response *GetQuoteResponse) error {
-	var resp GetQuotesResponse
-	symbol = strings.ToUpper(symbol)
-	err := getRequest("https://api.tdameritrade.com/v1/marketdata/"+symbol+"/quotes", accessToken, &resp.Quote)
-	*response = resp.Quote[symbol]
-	return err
-}
-
-//GetQuotes a quote on a option or stock Symbols seperate via commas ie IBM,AMZN
-func GetQuotes(symbols string, response *GetQuotesResponse) error {
-	symbols = strings.ToUpper(symbols)
-	err := getRequest("https://api.tdameritrade.com/v1/marketdata/quotes?symbol="+symbols, accessToken, &response.Quote)
-	return err
-}
-
 //IsValidTicker test if string is a valid ticker
 func IsValidTicker(ticker string) bool {
-	if len(ticker) <= 5 && utils.NoNumbers(ticker) && ticker != "bto" && ticker != "stc" {
+	if len(ticker) <= 5 && utils.NoNumbers(ticker) && ticker != "BTO" && ticker != "STC" {
 		var quoteResponse GetQuoteResponse
 
 		err := GetQuote(ticker, &quoteResponse)

@@ -88,6 +88,9 @@ func getRequest(endpoint string, token string, response interface{}) error {
 
 func postRequest(endpoint string, token string, payload interface{}) error {
 	bodyBytes, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
 
 	request, err := http.NewRequest("POST", endpoint, bytes.NewReader(bodyBytes))
 	if err != nil {

@@ -18,9 +18,15 @@ type TradeSettings struct {
 	WhitelistUserIDs      []string
 }
 
+//DBSettings this is exported
+type DBSettings struct {
+	BasePath string
+}
+
 //SettingsStruct this is exported
 type SettingsStruct struct {
 	Trade TradeSettings
+	DB    DBSettings
 }
 
 //DiscordInfo : this is exported
@@ -39,10 +45,20 @@ type TDA struct {
 	AccountID       string
 }
 
+//MySqlStruct : this is exported
+type MySqlStruct struct {
+	Username string
+	Password string
+	IP       string
+	Port     string
+	Database string
+}
+
 //Configuration : this is exported
 type Configuration struct {
 	Discord  DiscordInfo
 	TD       TDA
+	MySQL    MySqlStruct
 	Settings SettingsStruct
 }
 
@@ -80,6 +96,13 @@ func GetConfig() (configuration *Configuration, err error) {
 			CallbackAddress: "127.0.0.1:8080",
 			AccountID:       "Account ID",
 		},
+		MySqlStruct{
+			Username: "root",
+			Password: "",
+			IP:       "127.0.0.1",
+			Port:     "3306",
+			Database: "GoStocks",
+		},
 		SettingsStruct{
 			Trade: TradeSettings{
 				MakeRiskyTrades:       true,
@@ -88,6 +111,9 @@ func GetConfig() (configuration *Configuration, err error) {
 				StopLossPercentage:    0.50,
 				UseUserWhitlist:       true,
 				WhitelistUserIDs:      []string{"116377104035086339", "105036460108865536"},
+			},
+			DB: DBSettings{
+				BasePath: "database",
 			},
 		},
 	}
