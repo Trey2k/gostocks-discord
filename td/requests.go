@@ -60,12 +60,12 @@ func getRequest(endpoint string, token string, response interface{}) error {
 	case 401:
 		tokenRefreshes++
 		if tokenRefreshes == 1 {
-			var response RequestTokensResponse
-			err := refreshTokens(refreshToken, clientCode, &response)
+			var resp RequestTokensResponse
+			err := refreshTokens(refreshToken, clientCode, &resp)
 			if err != nil {
 				return err
 			}
-			accessToken = response.AccessToken
+			accessToken = resp.AccessToken
 			err = getRequest(endpoint, accessToken, &response)
 			if err != nil {
 				return err
@@ -120,7 +120,7 @@ func postRequest(endpoint string, token string, payload interface{}) error {
 				return err
 			}
 			accessToken = response.AccessToken
-			err = getRequest(endpoint, accessToken, &response)
+			err = postRequest(endpoint, accessToken, payload)
 			if err != nil {
 				return err
 			}
@@ -171,7 +171,7 @@ func putRequest(endpoint string, token string, payload interface{}) error {
 				return err
 			}
 			accessToken = response.AccessToken
-			err = getRequest(endpoint, accessToken, &response)
+			err = putRequest(endpoint, accessToken, payload)
 			if err != nil {
 				return err
 			}
@@ -219,7 +219,7 @@ func deleteRequest(endpoint string, token string) error {
 				return err
 			}
 			accessToken = response.AccessToken
-			err = getRequest(endpoint, accessToken, &response)
+			err = deleteRequest(endpoint, accessToken)
 			if err != nil {
 				return err
 			}
