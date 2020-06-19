@@ -10,23 +10,19 @@ var Config *Configuration
 
 //TradeSettings trade settings
 type TradeSettings struct {
-	MakeRiskyTrades       bool
-	RiskyInvestPercentage float64
-	SafeInvestPercentage  float64
-	StopLossPercentage    float64
-	UseUserWhitlist       bool
-	WhitelistUserIDs      []string
-}
-
-//DBSettings this is exported
-type DBSettings struct {
-	BasePath string
+	MakeRiskyTrades             bool
+	RiskyInvestPercentage       float64
+	SafeInvestPercentage        float64
+	SafeStopLossPercent         float64
+	RiskyStopLossPercent        float64
+	AllowedPriceIncreasePercent float64
+	UseUserWhitlist             bool
+	WhitelistUserIDs            []string
 }
 
 //SettingsStruct this is exported
 type SettingsStruct struct {
 	Trade TradeSettings
-	DB    DBSettings
 }
 
 //DiscordInfo : this is exported
@@ -45,8 +41,8 @@ type TDA struct {
 	AccountID       string
 }
 
-//MySqlStruct : this is exported
-type MySqlStruct struct {
+//MySQLStruct : this is exported
+type MySQLStruct struct {
 	Username string
 	Password string
 	IP       string
@@ -58,7 +54,7 @@ type MySqlStruct struct {
 type Configuration struct {
 	Discord  DiscordInfo
 	TD       TDA
-	MySQL    MySqlStruct
+	MySQL    MySQLStruct
 	Settings SettingsStruct
 }
 
@@ -96,7 +92,7 @@ func GetConfig() (configuration *Configuration, err error) {
 			CallbackAddress: "127.0.0.1:8080",
 			AccountID:       "Account ID",
 		},
-		MySqlStruct{
+		MySQLStruct{
 			Username: "root",
 			Password: "",
 			IP:       "127.0.0.1",
@@ -105,15 +101,14 @@ func GetConfig() (configuration *Configuration, err error) {
 		},
 		SettingsStruct{
 			Trade: TradeSettings{
-				MakeRiskyTrades:       true,
-				RiskyInvestPercentage: 0.05,
-				SafeInvestPercentage:  0.10,
-				StopLossPercentage:    0.50,
-				UseUserWhitlist:       true,
-				WhitelistUserIDs:      []string{"116377104035086339", "105036460108865536"},
-			},
-			DB: DBSettings{
-				BasePath: "database",
+				MakeRiskyTrades:             true,
+				RiskyInvestPercentage:       0.05,
+				SafeInvestPercentage:        0.10,
+				SafeStopLossPercent:         0.60,
+				RiskyStopLossPercent:        0.80,
+				AllowedPriceIncreasePercent: 0.11,
+				UseUserWhitlist:             true,
+				WhitelistUserIDs:            []string{"116377104035086339", "105036460108865536"},
 			},
 		},
 	}

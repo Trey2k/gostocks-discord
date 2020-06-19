@@ -66,7 +66,7 @@ func getRequest(endpoint string, token string, response interface{}) error {
 				return err
 			}
 			accessToken = response.AccessToken
-			err = getRequest(endpoint, token, &response)
+			err = getRequest(endpoint, accessToken, &response)
 			if err != nil {
 				return err
 			}
@@ -120,7 +120,7 @@ func postRequest(endpoint string, token string, payload interface{}) error {
 				return err
 			}
 			accessToken = response.AccessToken
-			err = getRequest(endpoint, token, &response)
+			err = getRequest(endpoint, accessToken, &response)
 			if err != nil {
 				return err
 			}
@@ -171,7 +171,7 @@ func putRequest(endpoint string, token string, payload interface{}) error {
 				return err
 			}
 			accessToken = response.AccessToken
-			err = getRequest(endpoint, token, &response)
+			err = getRequest(endpoint, accessToken, &response)
 			if err != nil {
 				return err
 			}
@@ -219,7 +219,7 @@ func deleteRequest(endpoint string, token string) error {
 				return err
 			}
 			accessToken = response.AccessToken
-			err = getRequest(endpoint, token, &response)
+			err = getRequest(endpoint, accessToken, &response)
 			if err != nil {
 				return err
 			}

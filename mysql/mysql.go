@@ -26,14 +26,14 @@ func StoreOrder(order utils.OrderStruct, optionData td.ExpDateOption) {
 	}
 	defer db.Close()
 
-	queryStr := "INSERT INTO `Orders`(`buy`, `risky`, `ticker`, `expDate`, `strikePrice`, `contractType`, `price`, `currentPrice`, `stopLoss`, `sender`, `messageID`, `description`, `active`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"
+	queryStr := "INSERT INTO `Orders`(`buy`, `risky`, `ticker`, `expDate`, `strikePrice`, `contractType`, `reportedPrice`, `purchasePrice`, `stopLoss`, `sender`, `messageID`, `description`, `active`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"
 
 	senderBytes, err := json.Marshal(order.Sender)
 	if err != nil {
 		panic(err)
 	}
 
-	insert, err := db.Query(queryStr, order.Buy, order.Risky, order.Ticker, order.ExpDate.Format(timeFormat), order.StrikPrice, order.ContractType, order.Price, optionData.Ask, order.StopLoss, senderBytes, order.MessageID, optionData.Description, true)
+	insert, err := db.Query(queryStr, order.Buy, order.Risky, order.Ticker, order.ExpDate.Format(timeFormat), order.StrikPrice, order.ContractType, order.Price, optionData.Last, order.StopLoss, senderBytes, order.MessageID, optionData.Description, true)
 	if err != nil {
 		panic(err)
 	}

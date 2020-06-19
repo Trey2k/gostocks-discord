@@ -23,6 +23,20 @@ func GetQuotes(symbols string, response *GetQuotesResponse) error {
 	return err
 }
 
+func findData(order utils.OrderStruct, expMap ExpDateMap) (ExpDateOption, bool) {
+	for date, temp := range expMap {
+		date = strings.Split(date, ":")[0]
+		if date == order.ExpDate.Format("2006-01-02") {
+			if strings.Contains(fmt.Sprint(order.StrikPrice), ".") {
+				return temp[fmt.Sprint(order.StrikPrice)][0], true
+			} else {
+				return temp[fmt.Sprint(order.StrikPrice)+".0"][0], true
+			}
+		}
+	}
+	return ExpDateOption{}, false
+}
+
 //GetOptionData stuff
 func GetOptionData(order utils.OrderStruct) (ExpDateOption, bool, error) {
 	var response Chains
@@ -32,28 +46,9 @@ func GetOptionData(order utils.OrderStruct) (ExpDateOption, bool, error) {
 	}
 
 	if order.ContractType == "CALL" {
-		for date, temp := range response.CallExpDateMap {
-			date = strings.Split(date, ":")[0]
-			if date == order.ExpDate.Format("2006-01-02") {
-				if strings.Contains(fmt.Sprint(order.StrikPrice), ".") {
-					return temp[fmt.Sprint(order.StrikPrice)][0], true, nil
-				} else {
-					return temp[fmt.Sprint(order.StrikPrice)+".0"][0], true, nil
-				}
-			}
-		}
-	} else {
-		for date, temp := range response.PutExpDateMap {
-			date = strings.Split(date, ":")[0]
-			if date == order.ExpDate.Format("2006-01-02") {
-				if strings.Contains(fmt.Sprint(order.StrikPrice), ".") {
-					return temp[fmt.Sprint(order.StrikPrice)][0], true, nil
-				} else {
-					return temp[fmt.Sprint(order.StrikPrice)+".0"][0], true, nil
-				}
-			}
-		}
+		resp, found := findData(order, response.CallExpDateMap)
+		return resp, found, nil
 	}
-
-	return ExpDateOption{}, false, nil
+	resp, found := findData(order, response.PutExpDateMap)
+	return resp, found, nil
 }

@@ -29,7 +29,7 @@ func placeOrder(order utils.OrderStruct) {
 	riskyInvestPercent := tradeSettings.RiskyInvestPercentage
 	safeInvestPercent := tradeSettings.SafeInvestPercentage
 	useUserWhitelist := tradeSettings.UseUserWhitlist
-	whitelistedUsers := utils.Config.Settings.Trade.WhitelistUserIDs
+	whitelistedUsers := tradeSettings.WhitelistUserIDs
 
 	if useUserWhitelist {
 		makeTrade = false
@@ -47,7 +47,7 @@ func placeOrder(order utils.OrderStruct) {
 		expDateFail = true
 	}
 
-	if order.Price == 0 || order.StrikPrice == 0 || order.ContractType == "" || order.Ticker == "" {
+	if order.Price == 0 || order.StrikPrice == 0 || order.ContractType == "" || order.Ticker == "" || order.ExpDate.IsZero() {
 		makeTrade = false
 		completeFail = true
 	} else {
@@ -55,21 +55,17 @@ func placeOrder(order utils.OrderStruct) {
 		utils.ErrCheck("Error getting Option Data", err)
 	}
 
-	if makeTrade && order.Risky && tradeSettings.MakeRiskyTrades && dataFound {
-		if tradeBalance >= initalBallance*riskyInvestPercent {
-			mysql.StoreOrder(order, optionData)
-			fmt.Println("I made a risky order")
-
+	if makeTrade && dataFound {
+		if order.Buy {
+			if order.Risky && tradeSettings.MakeRiskyTrades {
+				riskyBuy(tradeBalance, initalBallance, riskyInvestPercent, order, optionData)
+			} else if !order.Risky {
+				safeBuy(tradeBalance, initalBallance, safeInvestPercent, order, optionData)
+			} else {
+				fmt.Println("I did not make a order, risky tradding is off")
+			}
 		} else {
-			fmt.Println("I'm too poor for this trade")
-		}
-	} else if makeTrade && order.Risky == false && dataFound {
-		if tradeBalance >= initalBallance*safeInvestPercent {
-			mysql.StoreOrder(order, optionData)
-			fmt.Println("I made a safe order")
-
-		} else {
-			fmt.Println("I'm too poor for this trade")
+			sell(order, optionData)
 		}
 	} else {
 		if whitelistFail {
@@ -84,4 +80,39 @@ func placeOrder(order utils.OrderStruct) {
 			fmt.Println("I did not make a order")
 		}
 	}
+}
+
+func riskyBuy(tradeBalance float64, initalBallance float64, riskyInvestPercent float64, order utils.OrderStruct, optionData td.ExpDateOption) {
+	tradeSettings := utils.Config.Settings.Trade
+	if tradeBalance >= initalBallance*riskyInvestPercent {
+		if optionData.Last >= order.Price || int((order.Price-optionData.Last)/order.Price*100) <= int(tradeSettings.AllowedPriceIncreasePercent*100) {
+			amount := int64((initalBallance * riskyInvestPercent) / optionData.Last)
+			mysql.StoreOrder(order, optionData)
+			fmt.Println("I made a risky order of " + fmt.Sprint(amount) + " contracts at the price of " + fmt.Sprint(optionData.Last) + " each")
+		} else {
+			fmt.Println("I did not make a order the price increase is greater than " + fmt.Sprint(int(tradeSettings.AllowedPriceIncreasePercent*100)) + "% at " + fmt.Sprint(int((order.Price-optionData.Last)/order.Price*100)) + "%")
+		}
+	} else {
+		fmt.Println("I'm too poor for this trade")
+	}
+}
+
+func safeBuy(tradeBalance float64, initalBallance float64, safeInvestPercent float64, order utils.OrderStruct, optionData td.ExpDateOption) {
+	tradeSettings := utils.Config.Settings.Trade
+	if tradeBalance >= initalBallance*safeInvestPercent {
+		if optionData.Last <= order.Price || int((order.Price-optionData.Last)/order.Price*100) <= int(tradeSettings.AllowedPriceIncreasePercent*100) {
+			amount := int64((initalBallance * safeInvestPercent) / optionData.Last)
+			mysql.StoreOrder(order, optionData)
+			fmt.Println("I made a risky order of " + fmt.Sprint(amount) + " contracts at the price of " + fmt.Sprint(optionData.Last) + " each")
+		} else {
+			fmt.Println("I did not make a order the price increase is greater than " + fmt.Sprint(int(tradeSettings.AllowedPriceIncreasePercent*100)) + "% at " + fmt.Sprint(int((order.Price-optionData.Last)/order.Price*100)) + "%")
+		}
+	} else {
+		fmt.Println("I'm too poor for this trade")
+	}
+}
+
+func sell(order utils.OrderStruct, optionData td.ExpDateOption) {
+	//TODO: Code to find if order is in the DB
+	fmt.Println("I made a sell")
 }

@@ -65,7 +65,7 @@ func ChatParse(msg string, sender discordgo.User, messageID string) {
 					println("Error converting string date '" + cmd + "' to date: Unknown format. Settig exp date for today")
 					order.ExpDate = time.Now()
 				}
-				if order.ExpDate.Year() <= time.Now().Year() && order.ExpDate.YearDay() <= time.Now().YearDay()+1 {
+				if order.ExpDate.Year() <= time.Now().Year() && order.ExpDate.YearDay() <= time.Now().YearDay()+1 && order.Buy == true {
 					order.Risky = true
 				}
 
@@ -102,13 +102,12 @@ func ChatParse(msg string, sender discordgo.User, messageID string) {
 			}
 		}
 	}
-	var emptyDate time.Time
-	if order.ExpDate == emptyDate {
-		order.ExpDate = time.Now()
-		order.Risky = true
-	}
 	if order.StopLoss == 0 {
-		order.StopLoss = order.Price * utils.Config.Settings.Trade.StopLossPercentage
+		if order.Risky {
+			order.StopLoss = order.Price * utils.Config.Settings.Trade.RiskyStopLossPercent
+		} else {
+			order.StopLoss = order.Price * utils.Config.Settings.Trade.SafeStopLossPercent
+		}
 	}
 
 	ordersChannel <- order
