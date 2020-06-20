@@ -85,12 +85,12 @@ func placeOrder(order utils.OrderStruct) {
 func riskyBuy(tradeBalance float64, initalBallance float64, riskyInvestPercent float64, order utils.OrderStruct, optionData td.ExpDateOption) {
 	tradeSettings := utils.Config.Settings.Trade
 	if tradeBalance >= initalBallance*riskyInvestPercent {
-		if optionData.Last >= order.Price || int((order.Price-optionData.Last)/order.Price*100) <= int(tradeSettings.AllowedPriceIncreasePercent*100) {
+		if optionData.Last <= order.Price || int((optionData.Last-order.Price)/optionData.Last*100) <= int(tradeSettings.AllowedPriceIncreasePercent*100) {
 			amount := int64((initalBallance * riskyInvestPercent) / optionData.Last)
 			mysql.StoreOrder(order, optionData)
 			fmt.Println("I made a risky order of " + fmt.Sprint(amount) + " contracts at the price of " + fmt.Sprint(optionData.Last) + " each")
 		} else {
-			fmt.Println("I did not make a order the price increase is greater than " + fmt.Sprint(int(tradeSettings.AllowedPriceIncreasePercent*100)) + "% at " + fmt.Sprint(int((order.Price-optionData.Last)/order.Price*100)) + "%")
+			fmt.Println("I did not make a order the price increase is greater than " + fmt.Sprint(int(tradeSettings.AllowedPriceIncreasePercent*100)) + "% at " + fmt.Sprint(int((optionData.Last-order.Price)/optionData.Last*100)) + "%")
 		}
 	} else {
 		fmt.Println("I'm too poor for this trade")
@@ -100,12 +100,12 @@ func riskyBuy(tradeBalance float64, initalBallance float64, riskyInvestPercent f
 func safeBuy(tradeBalance float64, initalBallance float64, safeInvestPercent float64, order utils.OrderStruct, optionData td.ExpDateOption) {
 	tradeSettings := utils.Config.Settings.Trade
 	if tradeBalance >= initalBallance*safeInvestPercent {
-		if optionData.Last <= order.Price || int((order.Price-optionData.Last)/order.Price*100) <= int(tradeSettings.AllowedPriceIncreasePercent*100) {
+		if optionData.Last <= order.Price || int((optionData.Last-order.Price)/optionData.Last*100) <= int(tradeSettings.AllowedPriceIncreasePercent*100) {
 			amount := int64((initalBallance * safeInvestPercent) / optionData.Last)
 			mysql.StoreOrder(order, optionData)
 			fmt.Println("I made a risky order of " + fmt.Sprint(amount) + " contracts at the price of " + fmt.Sprint(optionData.Last) + " each")
 		} else {
-			fmt.Println("I did not make a order the price increase is greater than " + fmt.Sprint(int(tradeSettings.AllowedPriceIncreasePercent*100)) + "% at " + fmt.Sprint(int((order.Price-optionData.Last)/order.Price*100)) + "%")
+			fmt.Println("I did not make a order the price increase is greater than " + fmt.Sprint(int(tradeSettings.AllowedPriceIncreasePercent*100)) + "% at " + fmt.Sprint(int((optionData.Last-order.Price)/optionData.Last*100)) + "%")
 		}
 	} else {
 		fmt.Println("I'm too poor for this trade")
