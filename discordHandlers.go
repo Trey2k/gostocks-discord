@@ -12,7 +12,8 @@ func chatListener(discord *discordgo.Session, message *discordgo.MessageCreate) 
 	channelID := message.ChannelID
 
 	if serverID == utils.Config.Discord.GuildID && channelID == utils.Config.Discord.ChannelID {
-		ChatParse(message.Content, *message.Author, message.ID)
+		order := ChatParse(message.Content, *message.Author, message.ID)
+		ordersChannel <- order
 	}
 }
 

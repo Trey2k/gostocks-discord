@@ -8,17 +8,19 @@ import (
 	"github.com/Trey2k/gostocks-discord/td"
 	"github.com/Trey2k/gostocks-discord/utils"
 	"github.com/bwmarrin/discordgo"
+	"github.com/pkg/errors"
 )
 
 //Order Order built from Discord command
 
 //ChatParse : Parse a chat message and build a array of commands
-func ChatParse(msg string, sender discordgo.User, messageID string) {
+func ChatParse(msg string, sender discordgo.User, messageID string) utils.OrderStruct {
 	var err error
 	var order utils.OrderStruct
 
 	order.Sender = sender
 	order.MessageID = messageID
+	order.Message = msg
 
 	msg = strings.ToUpper(strings.Split(msg, "\n")[0])
 
@@ -41,7 +43,7 @@ func ChatParse(msg string, sender discordgo.User, messageID string) {
 
 	for i := 0; i < len(msgs); i++ {
 		cmd := msgs[i]
-		if i <= 5 && td.IsValidTicker(cmd) {
+		if i <= 3 && td.IsValidTicker(cmd) {
 			order.Ticker = cmd
 		} else {
 			if strings.Contains(cmd, "/") && utils.IsNumericIgnore(cmd, "/", 2) {
@@ -50,22 +52,19 @@ func ChatParse(msg string, sender discordgo.User, messageID string) {
 				if len(dates) == 2 {
 					date, err := time.Parse("1/2/2006", cmd+"/"+fmt.Sprint(time.Now().Year()))
 					if err != nil {
-						println("Error converting string date '" + cmd + "' to date: " + err.Error())
-						date = time.Now()
+						fmt.Println("Error converting string date '" + cmd + "' to date: " + errors.WithStack(err).Error())
 					}
 					order.ExpDate = date
 				} else if len(dates) == 3 {
 					date, err := time.Parse("1/2/2006", cmd)
 					if err != nil {
-						println("Error converting string date '" + cmd + "' to date: " + err.Error())
-						date = time.Now()
+						fmt.Println("Error converting string date '" + cmd + "' to date: " + errors.WithStack(err).Error())
 					}
 					order.ExpDate = date
 				} else {
-					println("Error converting string date '" + cmd + "' to date: Unknown format. Settig exp date for today")
-					order.ExpDate = time.Now()
+					fmt.Println("Error converting string date '" + cmd + "' to date: Unknown format.")
 				}
-				if order.ExpDate.Year() <= time.Now().Year() && order.ExpDate.YearDay() <= time.Now().YearDay()+1 && order.Buy == true {
+				if order.ExpDate.Year() <= time.Now().Year() && order.ExpDate.YearDay() <= (time.Now().YearDay()+1) && order.Buy == true {
 					order.Risky = true
 				}
 
@@ -74,14 +73,14 @@ func ChatParse(msg string, sender discordgo.User, messageID string) {
 				if strings.Contains(cmd, "C") {
 					x, err := utils.ToNumericIgnore(cmd, "C", 1)
 					if err != nil {
-						println("Error converting strike price '" + cmd + "' to int64: " + err.Error())
+						fmt.Println("Error converting strike price '" + cmd + "' to int64: " + errors.WithStack(err).Error())
 					}
 					order.StrikPrice = x
 					order.ContractType = "CALL"
 				} else {
 					x, err := utils.ToNumericIgnore(cmd, "P", 1)
 					if err != nil {
-						println("Error converting strike price '" + cmd + "' to int64: " + err.Error())
+						fmt.Println("Error converting strike price '" + cmd + "' to int64: " + errors.WithStack(err).Error())
 					}
 					order.StrikPrice = x
 					order.ContractType = "PUT"
@@ -91,12 +90,12 @@ func ChatParse(msg string, sender discordgo.User, messageID string) {
 				if order.Price == 0 {
 					order.Price, err = utils.ToNumericIgnore(cmd, "@", 1)
 					if err != nil {
-						println("Error converting price '" + cmd + "' to float64: " + err.Error())
+						fmt.Println("Error converting price '" + cmd + "' to float64: " + errors.WithStack(err).Error())
 					}
 				} else if order.StopLoss == 0 {
 					order.StopLoss, err = utils.ToNumeric(cmd)
 					if err != nil {
-						println("Error converting stop loss '" + cmd + "' to float64: " + err.Error())
+						fmt.Println("Error converting stop loss '" + cmd + "' to float64: " + errors.WithStack(err).Error())
 					}
 				}
 			}
@@ -110,5 +109,5 @@ func ChatParse(msg string, sender discordgo.User, messageID string) {
 		}
 	}
 
-	ordersChannel <- order
+	return order
 }

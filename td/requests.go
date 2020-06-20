@@ -125,7 +125,7 @@ func postRequest(endpoint string, token string, payload interface{}) error {
 				return err
 			}
 			tokenRefreshes = 0
-			return nil
+			return errors.New("Could not generate refresh token")
 		}
 		return errors.New("Error generating new access token. Please launch application again and reauthenticate")
 	case 403:

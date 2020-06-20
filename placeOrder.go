@@ -7,16 +7,20 @@ import (
 	"github.com/Trey2k/gostocks-discord/mysql"
 	"github.com/Trey2k/gostocks-discord/td"
 	"github.com/Trey2k/gostocks-discord/utils"
+	"github.com/pkg/errors"
 )
 
 func placeOrder(order utils.OrderStruct) {
 	var accountInfo td.GetAccountResponse
 	err := td.GetAccount(utils.Config.TD.AccountID, &accountInfo)
-	utils.ErrCheck("Error getting Account Info", err)
+	if err != nil {
+		fmt.Println("Error getting account info: " + errors.WithStack(err).Error())
+	}
 
 	tradeSettings := utils.Config.Settings.Trade
 
 	var makeTrade bool = true
+	var marketClosed bool = false
 	var whitelistFail bool = false
 	var expDateFail bool = false
 	var completeFail bool = false
@@ -24,10 +28,14 @@ func placeOrder(order utils.OrderStruct) {
 
 	var optionData td.ExpDateOption
 
-	tradeBalance := accountInfo.SecuritiesAccount.CurrentBalances.CashAvailableForTrading
+	tradeBalance, err := utils.GetTradeBal(accountInfo.SecuritiesAccount.CurrentBalances.CashAvailableForTrading)
+	if err != nil {
+		fmt.Println("Error getting trade ballance: " + errors.WithStack(err).Error())
+	}
+
 	initalBallance := accountInfo.SecuritiesAccount.InitialBalances.CashBalance
-	riskyInvestPercent := tradeSettings.RiskyInvestPercentage
-	safeInvestPercent := tradeSettings.SafeInvestPercentage
+	riskyInvestPercent := tradeSettings.RiskyInvestPercent
+	safeInvestPercent := tradeSettings.SafeInvestPercent
 	useUserWhitelist := tradeSettings.UseUserWhitlist
 	whitelistedUsers := tradeSettings.WhitelistUserIDs
 
@@ -42,77 +50,140 @@ func placeOrder(order utils.OrderStruct) {
 		}
 	}
 
-	if order.ExpDate.YearDay() < time.Now().YearDay() || order.ExpDate.Year() < time.Now().Year() {
-		makeTrade = false
-		expDateFail = true
+	/*marketHours, err := td.GetMarketHours()
+	if err != nil {
+		fmt.Println("Error getting market hours: " + errors.WithStack(err).Error())
 	}
+
+	if marketHours.IsOpen == false {
+		makeTrade = false
+		marketClosed = true
+	}*/
 
 	if order.Price == 0 || order.StrikPrice == 0 || order.ContractType == "" || order.Ticker == "" || order.ExpDate.IsZero() {
 		makeTrade = false
 		completeFail = true
 	} else {
 		optionData, dataFound, err = td.GetOptionData(order)
-		utils.ErrCheck("Error getting Option Data", err)
+		if err != nil {
+			fmt.Println("Error getting option data: " + errors.WithStack(err).Error())
+		}
+	}
+
+	if order.ExpDate.YearDay() < time.Now().YearDay() || order.ExpDate.Year() < time.Now().Year() {
+		makeTrade = false
+		expDateFail = true
 	}
 
 	if makeTrade && dataFound {
 		if order.Buy {
 			if order.Risky && tradeSettings.MakeRiskyTrades {
-				riskyBuy(tradeBalance, initalBallance, riskyInvestPercent, order, optionData)
+				buy(tradeBalance, initalBallance, riskyInvestPercent, order, optionData)
 			} else if !order.Risky {
-				safeBuy(tradeBalance, initalBallance, safeInvestPercent, order, optionData)
-			} else {
-				fmt.Println("I did not make a order, risky tradding is off")
+				buy(tradeBalance, initalBallance, safeInvestPercent, order, optionData)
+			} else { //105
+				failMessage := "Risky tradding is not enabled."
+				failLog(order, 105, failMessage)
 			}
 		} else {
-			sell(order, optionData)
+			sell(order, optionData, tradeBalance)
 		}
 	} else {
-		if whitelistFail {
-			fmt.Println("I did not make a order, sender not in whitelist")
-		} else if expDateFail {
-			fmt.Println("I did not make a order, trade expired")
-		} else if completeFail {
-			fmt.Println("I did not make a order, not enough instructions")
-		} else if !dataFound {
-			fmt.Println("I did not make a order, could not find option data")
-		} else {
-			fmt.Println("I did not make a order")
+		if marketClosed { //100
+			failMessage := "The market is currently closed."
+			failLog(order, 100, failMessage)
+		} else if whitelistFail { //101
+			failMessage := "Sender it not in whitelist."
+			failLog(order, 101, failMessage)
+		} else if completeFail { //103
+			failMessage := "Could not find enough instructions."
+			failLog(order, 102, failMessage)
+		} else if expDateFail { //102
+			failMessage := "Contract is expired."
+			failLog(order, 103, failMessage)
+		} else if !dataFound { //104
+			failMessage := "Could not find this contract."
+			failLog(order, 104, failMessage)
 		}
 	}
 }
 
-func riskyBuy(tradeBalance float64, initalBallance float64, riskyInvestPercent float64, order utils.OrderStruct, optionData td.ExpDateOption) {
-	tradeSettings := utils.Config.Settings.Trade
-	if tradeBalance >= initalBallance*riskyInvestPercent {
-		if optionData.Last <= order.Price || int((optionData.Last-order.Price)/optionData.Last*100) <= int(tradeSettings.AllowedPriceIncreasePercent*100) {
-			amount := int64((initalBallance * riskyInvestPercent) / optionData.Last)
-			mysql.StoreOrder(order, optionData)
-			fmt.Println("I made a risky order of " + fmt.Sprint(amount) + " contracts at the price of " + fmt.Sprint(optionData.Last) + " each")
-		} else {
-			fmt.Println("I did not make a order the price increase is greater than " + fmt.Sprint(int(tradeSettings.AllowedPriceIncreasePercent*100)) + "% at " + fmt.Sprint(int((optionData.Last-order.Price)/optionData.Last*100)) + "%")
+func buy(tradeBalance float64, initalBallance float64, investPercent float64, order utils.OrderStruct, optionData td.ExpDateOption) {
+	aleadyOwn, err := mysql.AlreadyOwn(order)
+	if err != nil {
+		fmt.Println("Error querying db: " + errors.WithStack(err).Error())
+	}
+	if !aleadyOwn {
+		tradeSettings := utils.Config.Settings.Trade
+		if tradeBalance >= initalBallance*investPercent {
+			if optionData.Last <= order.Price || int((optionData.Last-order.Price)/optionData.Last*100) <= int(tradeSettings.AllowedPriceIncreasePercent*100) {
+				contracts := int64((initalBallance * investPercent) / optionData.Last)
+				mysql.NewOrder(order, optionData, contracts)
+
+				totalPurchasePrice := float64(contracts) * optionData.Last
+				err = utils.SetTradeBal(tradeBalance - totalPurchasePrice)
+				if err != nil {
+					fmt.Println("Error Setting trade ball: " + errors.WithStack(err).Error())
+				}
+
+				fmt.Println("I made a order of " + fmt.Sprint(contracts) + " contracts at $" + fmt.Sprint(optionData.Last) + " each for a total price of $" + fmt.Sprint(totalPurchasePrice))
+				utils.PrintOrder(order)
+			} else { //106
+				failMessage := "The price increase is greater than " + fmt.Sprint(int(tradeSettings.AllowedPriceIncreasePercent*100)) + "% at " + fmt.Sprint(int((optionData.Last-order.Price)/optionData.Last*100)) + "%"
+				failLog(order, 106, failMessage)
+			}
+		} else { //107
+			failMessage := "I do not have enough trading funds to make this trade."
+			failLog(order, 107, failMessage)
 		}
-	} else {
-		fmt.Println("I'm too poor for this trade")
+	} else { //108
+		failMessage := "I already own contracts for this option."
+		failLog(order, 108, failMessage)
 	}
 }
 
-func safeBuy(tradeBalance float64, initalBallance float64, safeInvestPercent float64, order utils.OrderStruct, optionData td.ExpDateOption) {
-	tradeSettings := utils.Config.Settings.Trade
-	if tradeBalance >= initalBallance*safeInvestPercent {
-		if optionData.Last <= order.Price || int((optionData.Last-order.Price)/optionData.Last*100) <= int(tradeSettings.AllowedPriceIncreasePercent*100) {
-			amount := int64((initalBallance * safeInvestPercent) / optionData.Last)
-			mysql.StoreOrder(order, optionData)
-			fmt.Println("I made a risky order of " + fmt.Sprint(amount) + " contracts at the price of " + fmt.Sprint(optionData.Last) + " each")
-		} else {
-			fmt.Println("I did not make a order the price increase is greater than " + fmt.Sprint(int(tradeSettings.AllowedPriceIncreasePercent*100)) + "% at " + fmt.Sprint(int((optionData.Last-order.Price)/optionData.Last*100)) + "%")
+func sell(order utils.OrderStruct, optionData td.ExpDateOption, tradeBalance float64) {
+	owned, err := mysql.AlreadyOwn(order)
+	if err != nil {
+		fmt.Println("Error querying db: " + errors.WithStack(err).Error())
+	}
+	if owned {
+		resp, err := mysql.RetriveOrder(order)
+		if err != nil {
+			fmt.Println("Error querying db: " + errors.WithStack(err).Error())
 		}
+
+		err = mysql.SellContract(order)
+		if err != nil {
+			fmt.Println("Error querying db: " + errors.WithStack(err).Error())
+		}
+
+		sellPrice := float64(resp.Contracts) * optionData.Last
+		purchasePrice := float64(resp.Contracts) * resp.PurchasePrice
+		totalProfit := purchasePrice - sellPrice
+
+		fmt.Println("I sold " + fmt.Sprint(resp.Contracts) + " contracts at $" + fmt.Sprint(optionData.Last) + " each for a total of $" + fmt.Sprint(sellPrice))
+		fmt.Println("The total purchase price was $" + fmt.Sprint(purchasePrice) + " that makes our total profit $" + fmt.Sprint(totalProfit))
+
+		err = utils.SetTradeBal(tradeBalance + sellPrice)
+		if err != nil {
+			fmt.Println("Error Setting trade ball: " + errors.WithStack(err).Error())
+		}
+
+		utils.PrintOrder(order)
 	} else {
-		fmt.Println("I'm too poor for this trade")
+		fmt.Println("I do not own any contracts for this option")
+		fmt.Println("Message: " + order.Message)
 	}
 }
 
-func sell(order utils.OrderStruct, optionData td.ExpDateOption) {
-	//TODO: Code to find if order is in the DB
-	fmt.Println("I made a sell")
+func failLog(order utils.OrderStruct, failCode int, failMessage string) {
+	fmt.Println("I did not make an order: " + failMessage)
+
+	fmt.Println("Message: " + order.Message)
+
+	err := mysql.FailedOrder(order, failCode, failMessage)
+	if err != nil {
+		fmt.Println("Error saving failedOrder in db: " + errors.WithStack(err).Error())
+	}
 }

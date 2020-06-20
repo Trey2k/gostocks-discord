@@ -52,3 +52,10 @@ func GetOptionData(order utils.OrderStruct) (ExpDateOption, bool, error) {
 	resp, found := findData(order, response.PutExpDateMap)
 	return resp, found, nil
 }
+
+//GetMarketHours get the market hours
+func GetMarketHours() (OptionHours, error) {
+	var response MarketHoursResponse
+	err := getRequest("https://api.tdameritrade.com/v1/marketdata/OPTION/hours", accessToken, &response)
+	return response.Option.Option, err
+}

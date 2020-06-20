@@ -18,4 +18,5 @@ type OrderStruct struct {
 	StopLoss     float64
 	Sender       discordgo.User
 	MessageID    string
+	Message      string
 }

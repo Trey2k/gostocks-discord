@@ -260,9 +260,10 @@ type ExpDateOption struct {
 	NonStandard            bool    `json:"nonStandard"`
 }
 
-// the first string is the exp date.  the second string is the strike price.
+//ExpDateMap the first string is the exp date.  the second string is the strike price.
 type ExpDateMap map[string]map[string][]ExpDateOption
 
+//Chains stuff
 type Chains struct {
 	Symbol            string     `json:"symbol"`
 	Status            string     `json:"status"`
@@ -278,4 +279,19 @@ type Chains struct {
 	NumberOfContracts int        `json:"numberOfContracts"`
 	CallExpDateMap    ExpDateMap `json:"callExpDateMap"`
 	PutExpDateMap     ExpDateMap `json:"putExpDateMap"`
+}
+
+//MarketHoursResponse stuff
+type MarketHoursResponse struct {
+	Option struct {
+		Option OptionHours `json:"option"`
+	} `json:"option"`
+}
+
+//OptionHours stuff
+type OptionHours struct {
+	Date       string `json:"date"`
+	MarketType string `json:"marketType"`
+	Product    string `json:"product"`
+	IsOpen     bool   `json:"isOpen"`
 }

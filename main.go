@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/Trey2k/gostocks-discord/mysql"
 	"github.com/Trey2k/gostocks-discord/td"
 	"github.com/Trey2k/gostocks-discord/utils"
@@ -40,14 +38,7 @@ func main() {
 		for {
 			cmd := <-cmdChan
 			placeOrder(cmd)
-			printCommands(cmd)
 		}
 	}(ordersChannel)
 	<-make(chan struct{})
-}
-
-func printCommands(order utils.OrderStruct) {
-	fmt.Println("------------------------------------------------------------------------------------------------------------")
-	fmt.Println("Buy: " + fmt.Sprint(order.Buy) + ", Ticker: " + order.Ticker + ", Date: " + order.ExpDate.Format("1/2/2006") + ", StrikerPrice: " + fmt.Sprint(order.StrikPrice) + ", ContractType: " + order.ContractType + ", Buy Price: " + fmt.Sprint(order.Price) + ", Risky: " + fmt.Sprint(order.Risky) + ", Stop Loss: " + fmt.Sprint(order.StopLoss))
-	fmt.Println("------------------------------------------------------------------------------------------------------------")
 }
