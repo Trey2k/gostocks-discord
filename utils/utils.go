@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 //Init init utils, must be ran before anything that uses the config
@@ -105,4 +106,9 @@ func PrintOrder(order OrderStruct) {
 	fmt.Println("----------------------------------------------------------------------------------------------------------------------------------")
 	fmt.Println("Buy: " + fmt.Sprint(order.Buy) + ", Ticker: " + order.Ticker + ", Date: " + order.ExpDate.Format("1/2/2006") + ", StrikerPrice: " + fmt.Sprint(order.StrikPrice) + ", ContractType: " + order.ContractType + ", Buy Price: " + fmt.Sprint(order.Price) + ", Risky: " + fmt.Sprint(order.Risky) + ", Stop Loss: " + fmt.Sprint(order.StopLoss))
 	fmt.Println("----------------------------------------------------------------------------------------------------------------------------------")
+}
+
+//InTimeSpan Stuff
+func InTimeSpan(start, end, check time.Time) bool {
+	return check.After(start) && check.Before(end)
 }

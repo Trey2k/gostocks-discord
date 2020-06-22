@@ -58,6 +58,21 @@ func placeOrder(order utils.OrderStruct) {
 	if marketHours.Option.EQO.IsOpen == false {
 		makeTrade = false
 		marketClosed = true
+	} else {
+		start, err := time.Parse("2006-01-02T15:04:05Z07:00", marketHours.Option.EQO.SessionHours.RegularMarket[0].Start)
+		if err != nil {
+			fmt.Println("Error parsing time: " + errors.WithStack(err).Error())
+		}
+
+		end, err := time.Parse("2006-01-02T15:04:05Z07:00", marketHours.Option.EQO.SessionHours.RegularMarket[0].End)
+		if err != nil {
+			fmt.Println("Error parsing time: " + errors.WithStack(err).Error())
+		}
+
+		if !utils.InTimeSpan(start, end, time.Now()) {
+			makeTrade = false
+			marketClosed = true
+		}
 	}
 
 	if order.Price == 0 || order.StrikPrice == 0 || order.ContractType == "" || order.Ticker == "" || order.ExpDate.IsZero() {
