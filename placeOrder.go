@@ -115,8 +115,8 @@ func buy(tradeBalance float64, initalBallance float64, investPercent float64, or
 	}
 	if !aleadyOwn {
 		tradeSettings := utils.Config.Settings.Trade
-		if tradeBalance >= initalBallance*investPercent {
-			if optionData.Last <= order.Price || int((optionData.Last-order.Price)/optionData.Last*100) <= int(tradeSettings.AllowedPriceIncreasePercent*100) {
+		if int(tradeBalance*100) >= int((initalBallance*investPercent)*100) {
+			if int(optionData.Last*100) <= int(order.Price*100) || int((optionData.Last-order.Price)/optionData.Last*100) <= int(tradeSettings.AllowedPriceIncreasePercent*100) {
 				contracts := int64((initalBallance * investPercent) / optionData.Last)
 				mysql.NewOrder(order, optionData, contracts)
 

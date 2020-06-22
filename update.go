@@ -40,7 +40,7 @@ func update(period int) {
 
 				if currentPrice > purchasePrice && int((currentPrice-purchasePrice)/currentPrice*100) >= int(utils.Config.Settings.Trade.AutoSellProfitPercent*100) {
 					sell(resp[i].Order, optionData, tradeBalance)
-				}
+				}else if currentPrice < purchasePrice && int(currentPrice * 100) <= int(resp[i].Order.StopLoss*100)
 
 			} else {
 				fmt.Println("Error data could not be found for: " + resp[i].Symbol)
