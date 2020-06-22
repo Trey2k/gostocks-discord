@@ -159,7 +159,7 @@ func RetriveActiveOrder(symbol string) (StoredOrder, error) {
 	}
 	defer db.Close()
 
-	queryStr := "SELECT * FROM `Orders` WHERE `ticker`='" + symbol + "' and `status`<>'sold'"
+	queryStr := "SELECT * FROM `Orders` WHERE `symbol`='" + symbol + "' and `status`<>'sold'"
 
 	results, err := db.Query(queryStr)
 	if err != nil {

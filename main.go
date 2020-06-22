@@ -35,8 +35,8 @@ func main() {
 	defer discord.Close()
 
 	go update(utils.Config.Settings.Trade.UpdateInterval)
-
 	go procOrder(ordersChannel)
+
 	<-make(chan struct{})
 }
 

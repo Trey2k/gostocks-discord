@@ -102,9 +102,9 @@ func ChatParse(msg string, sender discordgo.User, messageID string) utils.OrderS
 	}
 	if order.StopLoss == 0 {
 		if order.Risky {
-			order.StopLoss = order.Price * utils.Config.Settings.Trade.RiskyStopLossPercent
+			order.StopLoss = float64(int((order.Price*utils.Config.Settings.Trade.RiskyStopLossPercent)*100)) / 100
 		} else {
-			order.StopLoss = order.Price * utils.Config.Settings.Trade.SafeStopLossPercent
+			order.StopLoss = float64(int((order.Price*utils.Config.Settings.Trade.SafeStopLossPercent)*100)) / 100
 		}
 	}
 

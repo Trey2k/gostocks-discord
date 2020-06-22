@@ -160,7 +160,7 @@ func sell(order utils.OrderStruct, optionData td.ExpDateOption, tradeBalance flo
 
 		sellPrice := float64(resp.Contracts) * optionData.Last
 		purchasePrice := float64(resp.Contracts) * resp.PurchasePrice
-		totalProfit := purchasePrice - sellPrice
+		totalProfit := sellPrice - purchasePrice
 
 		fmt.Println("I sold " + fmt.Sprint(resp.Contracts) + " contracts at $" + fmt.Sprint(optionData.Last) + " each for a total of $" + fmt.Sprint(sellPrice))
 		fmt.Println("The total purchase price was $" + fmt.Sprint(purchasePrice) + " that makes our total profit $" + fmt.Sprint(totalProfit))
