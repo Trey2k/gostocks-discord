@@ -32,7 +32,6 @@ type DiscordInfo struct {
 	Token      string
 	GuildIDs   []string
 	ChannelIDs []string
-	GameStatus string
 }
 
 //TDA : this is exported
@@ -85,7 +84,6 @@ func GetConfig() (configuration *Configuration, err error) {
 			Token:      "",
 			GuildIDs:   []string{"Guild ID1", "Guils ID2"},
 			ChannelIDs: []string{"Channel ID1", "Channel ID2"},
-			GameStatus: "The stock markets",
 		},
 		TDA{
 			ClientKey:       "Client Key",

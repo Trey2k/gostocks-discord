@@ -39,7 +39,7 @@ func editListener(discord *discordgo.Session, message *discordgo.MessageUpdate) 
 }
 
 func discordStatus(discord *discordgo.Session, ready *discordgo.Ready) {
-	err := discord.UpdateStatus(1, utils.Config.Discord.GameStatus)
-	utils.ErrCheck("Error connecting to discord: ", err)
 	fmt.Println("Started discord client.")
+	_, err := discord.UserUpdateStatus("invisible")
+	utils.ErrCheck("Error connecting to discord: ", err)
 }
