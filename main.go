@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/Trey2k/gostocks-discord/mysql"
 	"github.com/Trey2k/gostocks-discord/td"
 	"github.com/Trey2k/gostocks-discord/utils"
@@ -21,10 +23,7 @@ func main() {
 	go webapp.Start(td.CallbackAddress, td.AuthURL)
 	td.Auth() //Holding call untill authed
 
-	discord, err := discordgo.New("")
-	utils.ErrCheck("error creating discord session", err)
-
-	err = discord.Login(utils.Config.Discord.Username, utils.Config.Discord.Password)
+	discord, err := discordgo.New(utils.Config.Discord.Token)
 	utils.ErrCheck("error creating discord session", err)
 
 	discord.AddHandler(chatListener)
@@ -41,4 +40,19 @@ func main() {
 		}
 	}(ordersChannel)
 	<-make(chan struct{})
+}
+
+//IsValidTicker test if string is a valid ticker
+func isValidTicker(ticker string) bool {
+	if len(ticker) <= 5 && utils.NoNumbers(ticker) && ticker != "BTO" && ticker != "STC" {
+		var quoteResponse td.GetQuoteResponse
+
+		err := td.GetQuote(ticker, &quoteResponse)
+		utils.ErrCheck("Error testing is valid ticker for "+ticker, err)
+
+		if quoteResponse.Symbol == strings.ToUpper(ticker) {
+			return true
+		}
+	}
+	return false
 }

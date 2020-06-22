@@ -32,7 +32,7 @@ func GetTradeBal(ballance float64) (float64, error) {
 		if err != nil {
 			return 0, err
 		}
-		return ToNumeric(string(data))
+		return ToNumericIgnore(string(data), "\n", -1)
 	}
 	return ballance, SetTradeBal(ballance)
 }

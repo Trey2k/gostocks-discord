@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Trey2k/gostocks-discord/td"
 	"github.com/Trey2k/gostocks-discord/utils"
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
@@ -43,7 +42,7 @@ func ChatParse(msg string, sender discordgo.User, messageID string) utils.OrderS
 
 	for i := 0; i < len(msgs); i++ {
 		cmd := msgs[i]
-		if i <= 3 && td.IsValidTicker(cmd) {
+		if i <= 3 && isValidTicker(cmd) {
 			order.Ticker = cmd
 		} else {
 			if strings.Contains(cmd, "/") && utils.IsNumericIgnore(cmd, "/", 2) {
@@ -64,7 +63,7 @@ func ChatParse(msg string, sender discordgo.User, messageID string) utils.OrderS
 				} else {
 					fmt.Println("Error converting string date '" + cmd + "' to date: Unknown format.")
 				}
-				if order.ExpDate.Year() <= time.Now().Year() && order.ExpDate.YearDay() <= (time.Now().YearDay()+1) && order.Buy == true {
+				if order.ExpDate.Year() == time.Now().Year() && order.ExpDate.YearDay() <= (time.Now().YearDay()+1) && order.Buy == true {
 					order.Risky = true
 				}
 

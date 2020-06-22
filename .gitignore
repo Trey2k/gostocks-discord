@@ -3,4 +3,5 @@ config.json
 .vscode
 gostocks-discord
 *.exe
+*.zip
 info

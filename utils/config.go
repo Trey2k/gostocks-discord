@@ -27,10 +27,9 @@ type SettingsStruct struct {
 
 //DiscordInfo : this is exported
 type DiscordInfo struct {
-	Username   string
-	Password   string
-	GuildID    string
-	ChannelID  string
+	Token      string
+	GuildIDs   []string
+	ChannelIDs []string
 	GameStatus string
 }
 
@@ -81,10 +80,9 @@ func GetConfig() (configuration *Configuration, err error) {
 
 	config := &Configuration{ //Default configuration
 		DiscordInfo{
-			Username:   "Email",
-			Password:   "",
-			GuildID:    "",
-			ChannelID:  "",
+			Token:      "",
+			GuildIDs:   []string{"Guild ID1", "Guils ID2"},
+			ChannelIDs: []string{"Channel ID1", "Channel ID2"},
 			GameStatus: "The stock markets",
 		},
 		TDA{

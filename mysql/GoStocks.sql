@@ -3,14 +3,13 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jun 20, 2020 at 03:41 PM
+-- Generation Time: Jun 22, 2020 at 01:08 PM
 -- Server version: 8.0.20
 -- PHP Version: 7.3.14-1~deb10u1
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET AUTOCOMMIT = 0;
 START TRANSACTION;
-SET time_zone = "+00:00";
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -36,6 +35,7 @@ CREATE TABLE `FailedOrders` (
   `failMessage` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+
 -- --------------------------------------------------------
 
 --
@@ -46,6 +46,7 @@ CREATE TABLE `Orders` (
   `id` int NOT NULL,
   `risky` tinyint(1) NOT NULL,
   `ticker` varchar(6) NOT NULL,
+  `symbol` varchar(64) NOT NULL,
   `expDate` date NOT NULL,
   `strikePrice` int NOT NULL,
   `contractType` varchar(4) NOT NULL,
@@ -57,6 +58,7 @@ CREATE TABLE `Orders` (
   `messageID` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `status` varchar(16) NOT NULL,
+  `orderID` int NOT NULL,
   `createdDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -81,3 +83,19 @@ ALTER TABLE `Orders`
 -- AUTO_INCREMENT for dumped tables
 --
 
+--
+-- AUTO_INCREMENT for table `FailedOrders`
+--
+ALTER TABLE `FailedOrders`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Orders`
+--
+ALTER TABLE `Orders`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

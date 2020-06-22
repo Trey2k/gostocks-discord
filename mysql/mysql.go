@@ -18,6 +18,7 @@ var dateTimeFormat string = "2006-01-02 15:04:05"
 //StoredOrder stuff
 type StoredOrder struct {
 	ID            int
+	Symbol        string
 	PurchasePrice float64
 	Contracts     int
 	Status        string
@@ -40,14 +41,14 @@ func NewOrder(order utils.OrderStruct, optionData td.ExpDateOption, contracts in
 	}
 	defer db.Close()
 
-	queryStr := "INSERT INTO `Orders`(`risky`, `ticker`, `expDate`, `strikePrice`, `contractType`, `reportedPrice`, `purchasePrice`, `contracts`, `stopLoss`, `sender`, `messageID`, `message`, `status`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"
+	queryStr := "INSERT INTO `Orders`(`risky`, `ticker`, `symbol, `expDate`, `strikePrice`, `contractType`, `reportedPrice`, `purchasePrice`, `contracts`, `stopLoss`, `sender`, `messageID`, `message`, `status`, `orderID`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?.?)"
 
 	senderBytes, err := json.Marshal(order.Sender)
 	if err != nil {
 		return err
 	}
 
-	insert, err := db.Query(queryStr, order.Risky, order.Ticker, order.ExpDate.Format(dateFormat), order.StrikPrice, order.ContractType, order.Price, optionData.Last, contracts, order.StopLoss, senderBytes, order.MessageID, order.Message, "complete") //TODO: default status should be pending. This is here for offline test runs
+	insert, err := db.Query(queryStr, order.Risky, order.Ticker, optionData.Symbol, order.ExpDate.Format(dateFormat), order.StrikPrice, order.ContractType, order.Price, optionData.Last, contracts, order.StopLoss, senderBytes, order.MessageID, order.Message, "FILLED", 0) //TODO: default status should be pending. This is here for offline test runs
 	if err != nil {
 		return err
 	}
@@ -76,15 +77,14 @@ func FailedOrder(order utils.OrderStruct, failCode int, failMessage string) erro
 }
 
 //AlreadyOwn stuff
-func AlreadyOwn(order utils.OrderStruct) (bool, error) {
+func AlreadyOwn(symbol string) (bool, error) {
 	db, err := sql.Open("mysql", connectionString)
 	if err != nil {
 		return true, err
 	}
 	defer db.Close()
 
-	queryStr := "SELECT * FROM `Orders` WHERE `ticker`='" + order.Ticker + "' AND `expDate`='" + order.ExpDate.Format(dateFormat) +
-		"' AND `strikePrice`='" + fmt.Sprint(order.StrikPrice) + "' and `contractType`='" + order.ContractType + "' and `status`<>'sold'"
+	queryStr := "SELECT * FROM `Orders` WHERE `symbol`='" + symbol + "' and `status`<>'sold'"
 
 	results, err := db.Query(queryStr)
 	if err != nil {
@@ -95,8 +95,8 @@ func AlreadyOwn(order utils.OrderStruct) (bool, error) {
 	return results.Next(), nil
 }
 
-//RetriveOrder stuff
-func RetriveOrder(order utils.OrderStruct) (StoredOrder, error) {
+//RetriveActiveOrder stuff
+func RetriveActiveOrder(symbol string) (StoredOrder, error) {
 	var response StoredOrder
 	var sender []byte
 	db, err := sql.Open("mysql", connectionString+"?parseTime=true")
@@ -105,8 +105,7 @@ func RetriveOrder(order utils.OrderStruct) (StoredOrder, error) {
 	}
 	defer db.Close()
 
-	queryStr := "SELECT * FROM `Orders` WHERE `ticker`='" + order.Ticker + "' AND `expDate`='" + order.ExpDate.Format(dateFormat) +
-		"' AND `strikePrice`='" + fmt.Sprint(order.StrikPrice) + "' and `contractType`='" + order.ContractType + "'"
+	queryStr := "SELECT * FROM `Orders` WHERE `ticker`='" + symbol + "' and `status`<>'sold'"
 
 	results, err := db.Query(queryStr)
 	if err != nil {
@@ -115,7 +114,7 @@ func RetriveOrder(order utils.OrderStruct) (StoredOrder, error) {
 	defer results.Close()
 
 	for results.Next() {
-		err = results.Scan(&response.ID, &response.Order.Risky, &response.Order.Ticker, &response.Order.ExpDate, &response.Order.StrikPrice, &response.Order.ContractType,
+		err = results.Scan(&response.ID, &response.Order.Risky, &response.Order.Ticker, &response.Symbol, &response.Order.ExpDate, &response.Order.StrikPrice, &response.Order.ContractType,
 			&response.Order.Price, &response.PurchasePrice, &response.Contracts, &response.Order.StopLoss, &sender, &response.Order.MessageID,
 			&response.Order.Message, &response.Status, &response.CreatedDate, &response.UpdatedDate)
 		if err != nil {

@@ -28,12 +28,12 @@ func placeOrder(order utils.OrderStruct) {
 
 	var optionData td.ExpDateOption
 
-	tradeBalance, err := utils.GetTradeBal(accountInfo.SecuritiesAccount.CurrentBalances.CashAvailableForTrading)
+	tradeBalance, err := utils.GetTradeBal(accountInfo.Account.CurrentBalances.CashAvailableForTrading)
 	if err != nil {
 		fmt.Println("Error getting trade ballance: " + errors.WithStack(err).Error())
 	}
 
-	initalBallance := accountInfo.SecuritiesAccount.InitialBalances.CashBalance
+	initalBallance := accountInfo.Account.InitialBalances.CashBalance
 	riskyInvestPercent := tradeSettings.RiskyInvestPercent
 	safeInvestPercent := tradeSettings.SafeInvestPercent
 	useUserWhitelist := tradeSettings.UseUserWhitlist
@@ -50,15 +50,15 @@ func placeOrder(order utils.OrderStruct) {
 		}
 	}
 
-	/*marketHours, err := td.GetMarketHours()
+	marketHours, err := td.GetMarketHours()
 	if err != nil {
 		fmt.Println("Error getting market hours: " + errors.WithStack(err).Error())
 	}
 
-	if marketHours.IsOpen == false {
+	if marketHours.Option.EQO.IsOpen == false {
 		makeTrade = false
 		marketClosed = true
-	}*/
+	}
 
 	if order.Price == 0 || order.StrikPrice == 0 || order.ContractType == "" || order.Ticker == "" || order.ExpDate.IsZero() {
 		makeTrade = false
@@ -109,7 +109,7 @@ func placeOrder(order utils.OrderStruct) {
 }
 
 func buy(tradeBalance float64, initalBallance float64, investPercent float64, order utils.OrderStruct, optionData td.ExpDateOption) {
-	aleadyOwn, err := mysql.AlreadyOwn(order)
+	aleadyOwn, err := mysql.AlreadyOwn(optionData.Symbol)
 	if err != nil {
 		fmt.Println("Error querying db: " + errors.WithStack(err).Error())
 	}
@@ -143,12 +143,12 @@ func buy(tradeBalance float64, initalBallance float64, investPercent float64, or
 }
 
 func sell(order utils.OrderStruct, optionData td.ExpDateOption, tradeBalance float64) {
-	owned, err := mysql.AlreadyOwn(order)
+	owned, err := mysql.AlreadyOwn(optionData.Symbol)
 	if err != nil {
 		fmt.Println("Error querying db: " + errors.WithStack(err).Error())
 	}
 	if owned {
-		resp, err := mysql.RetriveOrder(order)
+		resp, err := mysql.RetriveActiveOrder(optionData.Symbol)
 		if err != nil {
 			fmt.Println("Error querying db: " + errors.WithStack(err).Error())
 		}
