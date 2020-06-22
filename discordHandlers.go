@@ -3,8 +3,10 @@ package main
 import (
 	"fmt"
 
+	"github.com/Trey2k/gostocks-discord/mysql"
 	"github.com/Trey2k/gostocks-discord/utils"
 	"github.com/bwmarrin/discordgo"
+	"github.com/pkg/errors"
 )
 
 func chatListener(discord *discordgo.Session, message *discordgo.MessageCreate) {
@@ -19,8 +21,25 @@ func chatListener(discord *discordgo.Session, message *discordgo.MessageCreate) 
 	}
 }
 
+func editListener(discord *discordgo.Session, message *discordgo.MessageUpdate) {
+	hasFailed, fail, err := mysql.HasFailed(message.ID)
+	if err != nil {
+		fmt.Println("Error querying db: " + errors.WithStack(err).Error())
+	}
+	if hasFailed {
+		if fail.FailCode != 101 {
+			err = mysql.DeleteFail(fail.ID)
+			if err != nil {
+				fmt.Println("Error querying db: " + errors.WithStack(err).Error())
+			}
+			order := ChatParse(message.Content, *message.Author, message.ID)
+			ordersChannel <- order
+		}
+	}
+}
+
 func discordStatus(discord *discordgo.Session, ready *discordgo.Ready) {
 	err := discord.UpdateStatus(1, utils.Config.Discord.GameStatus)
-	utils.ErrCheck("Error attempting to set my status", err)
+	utils.ErrCheck("Error connecting to discord: ", err)
 	fmt.Println("Started discord client.")
 }

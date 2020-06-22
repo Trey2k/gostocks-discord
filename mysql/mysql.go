@@ -25,6 +25,7 @@ type StoredOrder struct {
 	CreatedDate   time.Time
 	UpdatedDate   time.Time
 	Order         utils.OrderStruct
+	OrderID       int
 }
 
 //Init init MySQL Connectiong
@@ -41,7 +42,7 @@ func NewOrder(order utils.OrderStruct, optionData td.ExpDateOption, contracts in
 	}
 	defer db.Close()
 
-	queryStr := "INSERT INTO `Orders`(`risky`, `ticker`, `symbol, `expDate`, `strikePrice`, `contractType`, `reportedPrice`, `purchasePrice`, `contracts`, `stopLoss`, `sender`, `messageID`, `message`, `status`, `orderID`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?.?)"
+	queryStr := "INSERT INTO `Orders`(`risky`, `ticker`, `symbol`, `expDate`, `strikePrice`, `contractType`, `reportedPrice`, `purchasePrice`, `contracts`, `stopLoss`, `sender`, `messageID`, `message`, `status`, `orderID`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
 
 	senderBytes, err := json.Marshal(order.Sender)
 	if err != nil {
@@ -72,6 +73,59 @@ func FailedOrder(order utils.OrderStruct, failCode int, failMessage string) erro
 		return err
 	}
 	defer insert.Close()
+
+	return nil
+}
+
+//FailedOrderStruct stuff
+type FailedOrderStruct struct {
+	ID          int
+	MessageID   string
+	Message     string
+	FailCode    int
+	FailMessage string
+}
+
+//HasFailed stuff
+func HasFailed(messageID string) (bool, FailedOrderStruct, error) {
+	var response FailedOrderStruct
+	db, err := sql.Open("mysql", connectionString)
+	if err != nil {
+		return false, response, err
+	}
+	defer db.Close()
+
+	queryStr := "SELECT * FROM `FailedOrders` WHERE messageID='" + messageID + "'"
+
+	results, err := db.Query(queryStr)
+	if err != nil {
+		return false, response, err
+	}
+	defer results.Close()
+
+	if results.Next() {
+		results.Scan(&response.ID, &response.MessageID, &response.Message, &response.FailCode, &response.FailMessage)
+		return true, response, nil
+	}
+
+	return false, response, nil
+}
+
+//DeleteFail stuff
+func DeleteFail(ID int) error {
+	db, err := sql.Open("mysql", connectionString)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	queryStr := "DELETE FROM `FailedOrders` WHERE ID=?"
+
+	delete, err := db.Query(queryStr, ID)
+	if err != nil {
+		return err
+	}
+	defer delete.Close()
 
 	return nil
 }
@@ -116,7 +170,7 @@ func RetriveActiveOrder(symbol string) (StoredOrder, error) {
 	for results.Next() {
 		err = results.Scan(&response.ID, &response.Order.Risky, &response.Order.Ticker, &response.Symbol, &response.Order.ExpDate, &response.Order.StrikPrice, &response.Order.ContractType,
 			&response.Order.Price, &response.PurchasePrice, &response.Contracts, &response.Order.StopLoss, &sender, &response.Order.MessageID,
-			&response.Order.Message, &response.Status, &response.CreatedDate, &response.UpdatedDate)
+			&response.Order.Message, &response.Status, &response.OrderID, &response.CreatedDate, &response.UpdatedDate)
 		if err != nil {
 			return response, err
 		}
@@ -125,6 +179,47 @@ func RetriveActiveOrder(symbol string) (StoredOrder, error) {
 	err = json.Unmarshal(sender, &response.Order.Sender)
 	if err != nil {
 		return response, err
+	}
+
+	return response, nil
+}
+
+//GetOrders returns array of all active orders
+func GetOrders() ([]StoredOrder, error) {
+	response := make([]StoredOrder, 0)
+	db, err := sql.Open("mysql", connectionString+"?parseTime=true")
+	if err != nil {
+		return response, err
+	}
+	defer db.Close()
+
+	queryStr := "SELECT * FROM `Orders` WHERE `status`<>'sold'"
+
+	results, err := db.Query(queryStr)
+	if err != nil {
+		return response, err
+	}
+	defer results.Close()
+
+	i := 0
+
+	for results.Next() {
+		var sender []byte
+		var resp StoredOrder
+
+		err = results.Scan(&resp.ID, &resp.Order.Risky, &resp.Order.Ticker, &resp.Symbol, &resp.Order.ExpDate, &resp.Order.StrikPrice, &resp.Order.ContractType,
+			&resp.Order.Price, &resp.PurchasePrice, &resp.Contracts, &resp.Order.StopLoss, &sender, &resp.Order.MessageID,
+			&resp.Order.Message, &resp.Status, &resp.OrderID, &resp.CreatedDate, &resp.UpdatedDate)
+		if err != nil {
+			return response, err
+		}
+
+		err = json.Unmarshal(sender, &resp.Order.Sender)
+		if err != nil {
+			return response, err
+		}
+		response = append(response, resp)
+		i++
 	}
 
 	return response, nil

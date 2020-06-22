@@ -16,6 +16,8 @@ type TradeSettings struct {
 	SafeStopLossPercent         float64
 	RiskyStopLossPercent        float64
 	AllowedPriceIncreasePercent float64
+	UpdateInterval              int
+	AutoSellProfitPercent       float64
 	UseUserWhitlist             bool
 	WhitelistUserIDs            []string
 }
@@ -105,6 +107,8 @@ func GetConfig() (configuration *Configuration, err error) {
 				SafeStopLossPercent:         0.60,
 				RiskyStopLossPercent:        0.80,
 				AllowedPriceIncreasePercent: 0.11,
+				UpdateInterval:              10,
+				AutoSellProfitPercent:       0.4,
 				UseUserWhitlist:             true,
 				WhitelistUserIDs:            []string{"116377104035086339", "105036460108865536"},
 			},

@@ -27,18 +27,16 @@ func main() {
 	utils.ErrCheck("error creating discord session", err)
 
 	discord.AddHandler(chatListener)
+	discord.AddHandler(editListener)
 	discord.AddHandler(discordStatus)
 
 	err = discord.Open()
 	utils.ErrCheck("Error opening connection to Discord", err)
 	defer discord.Close()
 
-	go func(cmdChan chan utils.OrderStruct) {
-		for {
-			cmd := <-cmdChan
-			placeOrder(cmd)
-		}
-	}(ordersChannel)
+	go update(utils.Config.Settings.Trade.UpdateInterval)
+
+	go procOrder(ordersChannel)
 	<-make(chan struct{})
 }
 
