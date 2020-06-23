@@ -23,12 +23,32 @@ func update(period int) {
 			fmt.Println("Error getting trade ballance: " + errors.WithStack(err).Error())
 		}
 
+		var update bool = true
+
 		marketHours, err := td.GetMarketHours()
 		if err != nil {
 			fmt.Println("Error getting market hours: " + errors.WithStack(err).Error())
 		}
 
 		if marketHours.Option.EQO.IsOpen == false {
+			update = false
+		} else {
+			start, err := time.Parse("2006-01-02T15:04:05Z07:00", marketHours.Option.EQO.SessionHours.RegularMarket[0].Start)
+			if err != nil {
+				fmt.Println("Error parsing time: " + errors.WithStack(err).Error())
+			}
+
+			end, err := time.Parse("2006-01-02T15:04:05Z07:00", marketHours.Option.EQO.SessionHours.RegularMarket[0].End)
+			if err != nil {
+				fmt.Println("Error parsing time: " + errors.WithStack(err).Error())
+			}
+
+			if !utils.InTimeSpan(start, end, time.Now()) {
+				update = false
+			}
+		}
+
+		if update {
 
 			resp, err := mysql.GetOrders()
 			if err != nil {
