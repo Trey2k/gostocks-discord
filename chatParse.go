@@ -24,7 +24,7 @@ func ChatParse(msg string, sender discordgo.User, messageID string) utils.OrderS
 	msg = strings.ToUpper(strings.Split(msg, "\n")[0])
 
 	order.Risky = false
-	if strings.Contains(msg, "RISKY") || strings.Contains(msg, "LOTTO") {
+	if strings.Contains(msg, "RISK") || strings.Contains(msg, "LOTTO") {
 		order.Risky = true
 		msg = strings.Replace(msg, "RISKY", "", 1)
 		msg = strings.Replace(msg, "LOTTO", "", 1)
@@ -42,59 +42,63 @@ func ChatParse(msg string, sender discordgo.User, messageID string) utils.OrderS
 
 	for i := 0; i < len(msgs); i++ {
 		cmd := msgs[i]
-		if i <= 3 && isValidTicker(cmd) {
-			order.Ticker = cmd
-		} else {
-			if strings.Contains(cmd, "/") && utils.IsNumericIgnore(cmd, "/", 2) {
 
-				dates := strings.Split(cmd, "/")
-				if len(dates) == 2 {
-					date, err := time.Parse("1/2/2006", cmd+"/"+fmt.Sprint(time.Now().Year()))
-					if err != nil {
-						fmt.Println("Error converting string date '" + cmd + "' to date: " + errors.WithStack(err).Error())
-					}
-					order.ExpDate = date
-				} else if len(dates) == 3 {
-					date, err := time.Parse("1/2/2006", cmd)
-					if err != nil {
-						fmt.Println("Error converting string date '" + cmd + "' to date: " + errors.WithStack(err).Error())
-					}
-					order.ExpDate = date
-				} else {
-					fmt.Println("Error converting string date '" + cmd + "' to date: Unknown format.")
-				}
-				if order.ExpDate.Year() == time.Now().Year() && order.ExpDate.YearDay() <= (time.Now().YearDay()+1) && order.Buy == true {
-					order.Risky = true
-				}
+		if !strings.Contains(cmd, "http") {
 
-			} else if strings.Contains(cmd, "P") && utils.IsNumericIgnore(cmd, "P", 1) || strings.Contains(cmd, "C") && utils.IsNumericIgnore(cmd, "C", 1) {
+			if i <= 3 && isValidTicker(cmd) {
+				order.Ticker = cmd
+			} else {
+				if strings.Contains(cmd, "/") && utils.IsNumericIgnore(cmd, "/", 2) {
 
-				if strings.Contains(cmd, "C") {
-					x, err := utils.ToNumericIgnore(cmd, "C", 1)
-					if err != nil {
-						fmt.Println("Error converting strike price '" + cmd + "' to int64: " + errors.WithStack(err).Error())
+					dates := strings.Split(cmd, "/")
+					if len(dates) == 2 {
+						date, err := time.Parse("1/2/2006", cmd+"/"+fmt.Sprint(time.Now().Year()))
+						if err != nil {
+							fmt.Println("Error converting string date '" + cmd + "' to date: " + errors.WithStack(err).Error())
+						}
+						order.ExpDate = date
+					} else if len(dates) == 3 {
+						date, err := time.Parse("1/2/2006", cmd)
+						if err != nil {
+							fmt.Println("Error converting string date '" + cmd + "' to date: " + errors.WithStack(err).Error())
+						}
+						order.ExpDate = date
+					} else {
+						fmt.Println("Error converting string date '" + cmd + "' to date: Unknown format.")
 					}
-					order.StrikPrice = x
-					order.ContractType = "CALL"
-				} else {
-					x, err := utils.ToNumericIgnore(cmd, "P", 1)
-					if err != nil {
-						fmt.Println("Error converting strike price '" + cmd + "' to int64: " + errors.WithStack(err).Error())
+					if order.ExpDate.Year() == time.Now().Year() && order.ExpDate.YearDay() <= (time.Now().YearDay()+1) && order.Buy == true {
+						order.Risky = true
 					}
-					order.StrikPrice = x
-					order.ContractType = "PUT"
-				}
 
-			} else if strings.Contains(cmd, ".") && utils.IsNumericIgnore(cmd, "@", 1) {
-				if order.Price == 0 {
-					order.Price, err = utils.ToNumericIgnore(cmd, "@", 1)
-					if err != nil {
-						fmt.Println("Error converting price '" + cmd + "' to float64: " + errors.WithStack(err).Error())
+				} else if strings.Contains(cmd, "P") && utils.IsNumericIgnore(cmd, "P", 1) || strings.Contains(cmd, "C") && utils.IsNumericIgnore(cmd, "C", 1) {
+
+					if strings.Contains(cmd, "C") {
+						x, err := utils.ToNumericIgnore(cmd, "C", 1)
+						if err != nil {
+							fmt.Println("Error converting strike price '" + cmd + "' to int64: " + errors.WithStack(err).Error())
+						}
+						order.StrikPrice = x
+						order.ContractType = "CALL"
+					} else {
+						x, err := utils.ToNumericIgnore(cmd, "P", 1)
+						if err != nil {
+							fmt.Println("Error converting strike price '" + cmd + "' to int64: " + errors.WithStack(err).Error())
+						}
+						order.StrikPrice = x
+						order.ContractType = "PUT"
 					}
-				} else if order.StopLoss == 0 {
-					order.StopLoss, err = utils.ToNumeric(cmd)
-					if err != nil {
-						fmt.Println("Error converting stop loss '" + cmd + "' to float64: " + errors.WithStack(err).Error())
+
+				} else if strings.Contains(cmd, ".") && utils.IsNumericIgnore(cmd, "@", 1) {
+					if order.Price == 0 {
+						order.Price, err = utils.ToNumericIgnore(cmd, "@", 1)
+						if err != nil {
+							fmt.Println("Error converting price '" + cmd + "' to float64: " + errors.WithStack(err).Error())
+						}
+					} else if order.StopLoss == 0 {
+						order.StopLoss, err = utils.ToNumeric(cmd)
+						if err != nil {
+							fmt.Println("Error converting stop loss '" + cmd + "' to float64: " + errors.WithStack(err).Error())
+						}
 					}
 				}
 			}

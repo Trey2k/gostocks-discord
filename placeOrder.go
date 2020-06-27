@@ -50,12 +50,12 @@ func placeOrder(order utils.OrderStruct) {
 		}
 	}
 
-	marketHours, err := td.GetMarketHours()
+	//marketHours, err := td.GetMarketHours()
 	if err != nil {
 		fmt.Println("Error getting market hours: " + errors.WithStack(err).Error())
 	}
 
-	if marketHours.Option.EQO.IsOpen == false {
+	/*if marketHours.Option.EQO.IsOpen == false {
 		makeTrade = false
 		marketClosed = true
 	} else {
@@ -73,7 +73,7 @@ func placeOrder(order utils.OrderStruct) {
 			makeTrade = false
 			marketClosed = true
 		}
-	}
+	}*/
 
 	if order.Price == 0 || order.StrikPrice == 0 || order.ContractType == "" || order.Ticker == "" || order.ExpDate.IsZero() {
 		makeTrade = false
@@ -130,19 +130,21 @@ func buy(tradeBalance float64, initalBallance float64, investPercent float64, or
 	}
 	if !aleadyOwn {
 		tradeSettings := utils.Config.Settings.Trade
-		if int(tradeBalance*100) >= int((initalBallance*investPercent)*100) {
+		contracts := int64((initalBallance * investPercent) / (optionData.Last * 100))
+		if int(tradeBalance*100) >= int((initalBallance*investPercent)*100) && contracts != 0 {
 			if int(optionData.Last*100) <= int(order.Price*100) || int((optionData.Last-order.Price)/optionData.Last*100) <= int(tradeSettings.AllowedPriceIncreasePercent*100) {
-				contracts := int64((initalBallance * investPercent) / optionData.Last)
+
 				mysql.NewOrder(order, optionData, contracts)
 
-				totalPurchasePrice := float64(contracts) * optionData.Last
+				totalPurchasePrice := float64(contracts) * (optionData.Last * 100)
 				err = utils.SetTradeBal(tradeBalance - totalPurchasePrice)
 				if err != nil {
 					fmt.Println("Error Setting trade ball: " + errors.WithStack(err).Error())
 				}
 
-				fmt.Println("I made a order of " + fmt.Sprint(contracts) + " contracts at $" + fmt.Sprint(optionData.Last) + " each for a total price of $" + fmt.Sprint(totalPurchasePrice))
+				fmt.Println("I made a order of " + fmt.Sprint(contracts) + " contracts at $" + fmt.Sprint(optionData.Last*100) + " or option price of $" + fmt.Sprint(optionData.Last) + " each for a total price of $" + fmt.Sprint(totalPurchasePrice))
 				utils.PrintOrder(order)
+
 			} else { //106
 				failMessage := "The price increase is greater than " + fmt.Sprint(int(tradeSettings.AllowedPriceIncreasePercent*100)) + "% at " + fmt.Sprint(int((optionData.Last-order.Price)/optionData.Last*100)) + "%"
 				failLog(order, 106, failMessage)
