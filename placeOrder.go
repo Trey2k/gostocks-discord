@@ -50,12 +50,12 @@ func placeOrder(order utils.OrderStruct) {
 		}
 	}
 
-	//marketHours, err := td.GetMarketHours()
+	marketHours, err := td.GetMarketHours()
 	if err != nil {
 		fmt.Println("Error getting market hours: " + errors.WithStack(err).Error())
 	}
 
-	/*if marketHours.Option.EQO.IsOpen == false {
+	if marketHours.Option.EQO.IsOpen == false {
 		makeTrade = false
 		marketClosed = true
 	} else {
@@ -73,7 +73,7 @@ func placeOrder(order utils.OrderStruct) {
 			makeTrade = false
 			marketClosed = true
 		}
-	}*/
+	}
 
 	if order.Price == 0 || order.StrikPrice == 0 || order.ContractType == "" || order.Ticker == "" || order.ExpDate.IsZero() {
 		makeTrade = false
