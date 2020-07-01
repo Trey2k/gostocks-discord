@@ -49,7 +49,7 @@ func NewOrder(order utils.OrderStruct, optionData td.ExpDateOption, contracts in
 		return err
 	}
 
-	insert, err := db.Query(queryStr, order.Risky, order.Ticker, optionData.Symbol, order.ExpDate.Format(dateFormat), order.StrikPrice, order.ContractType, order.Price, optionData.Last, contracts, order.StopLoss, senderBytes, order.MessageID, order.Message, "FILLED", 0) //TODO: default status should be pending. This is here for offline test runs
+	insert, err := db.Query(queryStr, order.Risky, order.Ticker, optionData.Symbol, order.ExpDate.Format(dateFormat), order.StrikPrice, order.ContractType, order.Price, optionData.Last, contracts, order.StopLoss, senderBytes, order.MessageID, order.Message, "PENDING", 0) //TODO: default status should be pending. This is here for offline test runs
 	if err != nil {
 		return err
 	}
@@ -138,7 +138,7 @@ func AlreadyOwn(symbol string) (bool, error) {
 	}
 	defer db.Close()
 
-	queryStr := "SELECT * FROM `Orders` WHERE `symbol`='" + symbol + "' and `status`<>'sold'"
+	queryStr := "SELECT * FROM `Orders` WHERE `symbol`='" + symbol + "' and `status`<>'SOLD'"
 
 	results, err := db.Query(queryStr)
 	if err != nil {
@@ -159,7 +159,7 @@ func RetriveActiveOrder(symbol string) (StoredOrder, error) {
 	}
 	defer db.Close()
 
-	queryStr := "SELECT * FROM `Orders` WHERE `symbol`='" + symbol + "' and `status`<>'sold'"
+	queryStr := "SELECT * FROM `Orders` WHERE `symbol`='" + symbol + "' and `status`<>'SOLD'"
 
 	results, err := db.Query(queryStr)
 	if err != nil {
@@ -193,7 +193,7 @@ func GetOrders() ([]StoredOrder, error) {
 	}
 	defer db.Close()
 
-	queryStr := "SELECT * FROM `Orders` WHERE `status`<>'sold'"
+	queryStr := "SELECT * FROM `Orders` WHERE `status`<>'SOLD'"
 
 	results, err := db.Query(queryStr)
 	if err != nil {
@@ -233,7 +233,27 @@ func SellContract(order utils.OrderStruct) error {
 	}
 	defer db.Close()
 
-	queryStr := "UPDATE `Orders` SET `status`='sold',`updatedDate`='" + time.Now().Format(dateTimeFormat) + "' WHERE `ticker`='" + order.Ticker + "' AND `expDate`='" +
+	queryStr := "UPDATE `Orders` SET `status`='SOLD',`updatedDate`='" + time.Now().Format(dateTimeFormat) + "' WHERE `ticker`='" + order.Ticker + "' AND `expDate`='" +
+		order.ExpDate.Format(dateFormat) + "' AND `strikePrice`='" + fmt.Sprint(order.StrikPrice) + "' and `contractType`='" + order.ContractType + "'"
+
+	insert, err := db.Query(queryStr)
+	if err != nil {
+		return err
+	}
+	defer insert.Close()
+
+	return nil
+}
+
+//OrderFilled stuff
+func OrderFilled(order utils.OrderStruct, filledContracts int) error {
+	db, err := sql.Open("mysql", connectionString)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	queryStr := "UPDATE `Orders` SET `contracts`=" + fmt.Sprint(int(filledContracts)) + ", `status`='FILLED',`updatedDate`='" + time.Now().Format(dateTimeFormat) + "' WHERE `ticker`='" + order.Ticker + "' AND `expDate`='" +
 		order.ExpDate.Format(dateFormat) + "' AND `strikePrice`='" + fmt.Sprint(order.StrikPrice) + "' and `contractType`='" + order.ContractType + "'"
 
 	insert, err := db.Query(queryStr)

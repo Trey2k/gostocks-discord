@@ -65,10 +65,33 @@ func update(period int) {
 					purchasePrice := resp[i].PurchasePrice
 					currentPrice := optionData.Last
 
-					if currentPrice > purchasePrice && int((currentPrice-purchasePrice)/purchasePrice*100) >= int(utils.Config.Settings.Trade.AutoSellProfitPercent*100) {
-						sell(resp[i].Order, optionData, tradeBalance)
-					} else if currentPrice < purchasePrice && int(currentPrice*100) <= int(resp[i].Order.StopLoss*100) {
-						sell(resp[i].Order, optionData, tradeBalance)
+					if resp[i].Status == "PENDING" {
+						response, err := td.GetOrders(utils.Config.TD.AccountID, time.Now(), time.Now())
+						if err != nil {
+							fmt.Println("Error getting list of orders from TD: " + errors.WithStack(err).Error())
+						}
+
+						for j := 0; j < len(response); j++ {
+							if response[j].OrderLegCollection[0].Instrument.Symbol == optionData.Symbol && response[j].OrderLegCollection[0].Instruction == "BUY_TO_OPEN" {
+								if response[j].Status == "FILLED" {
+									err := mysql.OrderFilled(resp[i].Order, int(response[j].FilledQuantity))
+									if err != nil {
+										fmt.Println("Error getting updating db: " + errors.WithStack(err).Error())
+									}
+									fmt.Println("The order for " + resp[i].Symbol + " has been filled. The filled quantity is " + fmt.Sprint(response[j].FilledQuantity))
+									break
+								}
+							}
+						}
+
+					} else {
+						if currentPrice > purchasePrice && int((currentPrice-purchasePrice)/purchasePrice*100) >= int(utils.Config.Settings.Trade.AutoSellProfitPercent*100) {
+							fmt.Println("Auto selling for profit baby!")
+							sell(resp[i].Order, optionData, tradeBalance)
+						} else if currentPrice < purchasePrice && int(currentPrice*100) <= int(resp[i].Order.StopLoss*100) {
+							fmt.Println("Auto selling to save our ass!")
+							sell(resp[i].Order, optionData, tradeBalance)
+						}
 					}
 
 				} else {

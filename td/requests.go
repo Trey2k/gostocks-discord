@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -92,11 +93,11 @@ func postRequest(endpoint string, token string, payload interface{}) error {
 		return err
 	}
 
-	request, err := http.NewRequest("POST", endpoint, bytes.NewReader(bodyBytes))
+	request, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(bodyBytes))
 	if err != nil {
 		return err
 	}
-
+	request.Header.Add("Content-Length", fmt.Sprint(len(bodyBytes)))
 	request.Header.Add("Content-Type", "application/json")
 	request.Header.Add("Authorization", "Bearer "+token)
 
@@ -108,7 +109,12 @@ func postRequest(endpoint string, token string, payload interface{}) error {
 	switch resp.StatusCode {
 	case 200:
 		return nil
+	case 201:
+		return nil
 	case 400:
+		fmt.Println(string(bodyBytes))
+		fmt.Println("-------------------------------------------")
+		fmt.Println(fmt.Sprint(resp))
 		return errors.New("There was a validation problem with the request")
 
 	case 401:

@@ -1,19 +1,21 @@
 package td
 
-import "time"
+import (
+	"time"
+)
 
 //GetOrdersResponse array of GetOrderResponse
 type GetOrdersResponse []GetOrderResponse
 
 //GetOrderResponse for GetOrder
-type GetOrderResponse []struct {
+type GetOrderResponse struct {
 	Session                  string                          `json:"session"`
 	Duration                 string                          `json:"duration"`
 	OrderType                string                          `json:"orderType"`
 	ComplexOrderStrategyType string                          `json:"complexOrderStrategyType"`
-	Quantity                 int                             `json:"quantity"`
-	FilledQuantity           int                             `json:"filledQuantity"`
-	RemainingQuantity        int                             `json:"remainingQuantity"`
+	Quantity                 float64                         `json:"quantity"`
+	FilledQuantity           float64                         `json:"filledQuantity"`
+	RemainingQuantity        float64                         `json:"remainingQuantity"`
 	RequestedDestination     string                          `json:"requestedDestination"`
 	DestinationLinkName      string                          `json:"destinationLinkName"`
 	Price                    float64                         `json:"price"`
@@ -33,8 +35,8 @@ type GetOrderResponse []struct {
 type OrderActivityCollectionStruct struct {
 	ActivityType           string                `json:"activityType"`
 	ExecutionType          string                `json:"executionType"`
-	Quantity               int                   `json:"quantity"`
-	OrderRemainingQuantity int                   `json:"orderRemainingQuantity"`
+	Quantity               float64               `json:"quantity"`
+	OrderRemainingQuantity float64               `json:"orderRemainingQuantity"`
 	ExecutionLegs          []ExecutionLegsStruct `json:"executionLegs"`
 }
 
@@ -45,14 +47,14 @@ type OrderLegCollectionStruct struct {
 	Instrument     InstrumentStruct `json:"instrument"`
 	Instruction    string           `json:"instruction"`
 	PositionEffect string           `json:"positionEffect"`
-	Quantity       int              `json:"quantity"`
+	Quantity       float64          `json:"quantity"`
 }
 
 //ExecutionLegsStruct Stuff
 type ExecutionLegsStruct struct {
 	LegID             int     `json:"legId"`
-	Quantity          int     `json:"quantity"`
-	MismarkedQuantity int     `json:"mismarkedQuantity"`
+	Quantity          float64 `json:"quantity"`
+	MismarkedQuantity float64 `json:"mismarkedQuantity"`
 	Price             float64 `json:"price"`
 	Time              string  `json:"time"`
 }
@@ -65,12 +67,22 @@ type InstrumentStruct struct {
 	Description string `json:"description"`
 }
 
-//PlaceOrderPayload Payload for PlaceOrder
-type PlaceOrderPayload struct {
+//PlaceOrderBuyPayload Payload for PlaceOrderBuy
+type PlaceOrderBuyPayload struct {
 	ComplexOrderStrategyType string                      `json:"complexOrderStrategyType"`
 	OrderType                string                      `json:"orderType"`
 	Session                  string                      `json:"session"`
 	Price                    string                      `json:"price"`
+	Duration                 string                      `json:"duration"`
+	OrderStrategyType        string                      `json:"orderStrategyType"`
+	OrderLegCollection       []OrderLegCollectionPayload `json:"orderLegCollection"`
+}
+
+//PlaceOrderSellPayload Payload for PlaceOrderSell
+type PlaceOrderSellPayload struct {
+	ComplexOrderStrategyType string                      `json:"complexOrderStrategyType"`
+	OrderType                string                      `json:"orderType"`
+	Session                  string                      `json:"session"`
 	Duration                 string                      `json:"duration"`
 	OrderStrategyType        string                      `json:"orderStrategyType"`
 	OrderLegCollection       []OrderLegCollectionPayload `json:"orderLegCollection"`
@@ -97,28 +109,28 @@ func CancleOrder(accountID string, orderID string) error {
 }
 
 //GetOrder Returns an order
-func GetOrder(accountID string, orderID string, response *GetOrderResponse) error {
-
+func GetOrder(accountID string, orderID string) (GetOrderResponse, error) {
+	var response GetOrderResponse
 	err := getRequest("https://api.tdameritrade.com/v1/accounts/"+accountID+"/orders/"+orderID, accessToken, &response)
-	return err
+	return response, err
 }
 
 //GetOrders Returns all orders
-func GetOrders(accountID string, fromTime time.Time, toTime time.Time, response *GetOrdersResponse) error {
+func GetOrders(accountID string, fromTime time.Time, toTime time.Time) (GetOrdersResponse, error) {
+	var response GetOrdersResponse
 	var dateFormat string = "2006-01-02"
 	err := getRequest("https://api.tdameritrade.com/v1/orders?accountId="+accountID+"&fromEnteredTime="+fromTime.Format(dateFormat)+"&toEnteredTime="+toTime.Format(dateFormat), accessToken, &response)
+	return response, err
+}
+
+//PlaceOrderBuy place an order
+func PlaceOrderBuy(accountID string, payload PlaceOrderBuyPayload) error {
+	err := postRequest("https://api.tdameritrade.com/v1/accounts/"+accountID+"/orders", accessToken, payload)
 	return err
 }
 
-//PlaceOrder place an order
-func PlaceOrder(accountID string, payload PlaceOrderPayload) error {
-	err := postRequest("https://api.tdameritrade.com/v1/accounts/"+accountID+"/orders/", accessToken, payload)
-	return err
-}
-
-//ReplaceOrder repalce an order
-func ReplaceOrder(accountID string, orderID string, payload PlaceOrderPayload) error {
-
-	err := putRequest("https://api.tdameritrade.com/v1/accounts/"+accountID+"/orders/"+orderID, accessToken, payload)
+//PlaceOrderSell place an order
+func PlaceOrderSell(accountID string, payload PlaceOrderSellPayload) error {
+	err := postRequest("https://api.tdameritrade.com/v1/accounts/"+accountID+"/orders", accessToken, payload)
 	return err
 }

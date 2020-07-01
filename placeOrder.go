@@ -28,11 +28,7 @@ func placeOrder(order utils.OrderStruct) {
 
 	var optionData td.ExpDateOption
 
-	tradeBalance, err := utils.GetTradeBal(accountInfo.Account.CurrentBalances.CashAvailableForTrading)
-	if err != nil {
-		fmt.Println("Error getting trade ballance: " + errors.WithStack(err).Error())
-	}
-
+	tradeBalance := accountInfo.Account.CurrentBalances.CashAvailableForTrading
 	initalBallance := accountInfo.Account.InitialBalances.CashBalance
 	riskyInvestPercent := tradeSettings.RiskyInvestPercent
 	safeInvestPercent := tradeSettings.SafeInvestPercent
@@ -142,6 +138,31 @@ func buy(tradeBalance float64, initalBallance float64, investPercent float64, or
 					fmt.Println("Error Setting trade ball: " + errors.WithStack(err).Error())
 				}
 
+				payload := td.PlaceOrderBuyPayload{
+					ComplexOrderStrategyType: "NONE",
+					OrderType:                "LIMIT",
+					Session:                  "NORMAL",
+					Price:                    fmt.Sprint(float64(int((order.Price+(order.Price*tradeSettings.AllowedPriceIncreasePercent))*100)) / 100),
+					Duration:                 "DAY",
+					OrderStrategyType:        "SINGLE",
+					OrderLegCollection: []td.OrderLegCollectionPayload{
+						{
+							Instruction: "BUY_TO_OPEN",
+							Quantity:    int(contracts),
+							Instrument: td.InstrumentPayload{
+								Symbol:    optionData.Symbol,
+								AssetType: "OPTION",
+							},
+						},
+					},
+				}
+
+				err := td.PlaceOrderBuy(utils.Config.TD.AccountID, payload)
+				if err != nil {
+					fmt.Println(order.Message)
+					utils.ErrCheck("BAD BAD BAD ERROR MAKEING ORDER: ", err)
+				}
+
 				fmt.Println("I made a order of " + fmt.Sprint(contracts) + " contracts at $" + fmt.Sprint(optionData.Last*100) + " or option price of $" + fmt.Sprint(optionData.Last) + " each for a total price of $" + fmt.Sprint(totalPurchasePrice))
 				utils.PrintOrder(order)
 
@@ -170,24 +191,49 @@ func sell(order utils.OrderStruct, optionData td.ExpDateOption, tradeBalance flo
 			fmt.Println("Error querying db: " + errors.WithStack(err).Error())
 		}
 
-		err = mysql.SellContract(order)
-		if err != nil {
-			fmt.Println("Error querying db: " + errors.WithStack(err).Error())
+		if resp.Status != "PENDING" {
+
+			err = mysql.SellContract(order)
+			if err != nil {
+				fmt.Println("Error querying db: " + errors.WithStack(err).Error())
+			}
+
+			sellPrice := float64(resp.Contracts) * optionData.Last
+			purchasePrice := float64(resp.Contracts) * resp.PurchasePrice
+			totalProfit := sellPrice - purchasePrice
+
+			payload := td.PlaceOrderSellPayload{
+				ComplexOrderStrategyType: "NONE",
+				OrderType:                "MARKET",
+				Session:                  "NORMAL",
+				Duration:                 "DAY",
+				OrderStrategyType:        "SINGLE",
+				OrderLegCollection: []td.OrderLegCollectionPayload{
+					{
+						Instruction: "SELL_TO_CLOSE",
+						Quantity:    resp.Contracts,
+						Instrument: td.InstrumentPayload{
+							Symbol:    optionData.Symbol,
+							AssetType: "OPTION",
+						},
+					},
+				},
+			}
+
+			err = td.PlaceOrderSell(utils.Config.TD.AccountID, payload)
+			if err != nil {
+				fmt.Println(order.Message)
+				utils.ErrCheck("BAD BAD BAD ERROR SELLING ORDER: ", err)
+			}
+
+			fmt.Println("I sold " + fmt.Sprint(resp.Contracts) + " contracts at $" + fmt.Sprint(optionData.Last) + " each for a total of $" + fmt.Sprint(sellPrice*100))
+			fmt.Println("The total purchase price was $" + fmt.Sprint(purchasePrice*100) + " that makes our total profit $" + fmt.Sprint(totalProfit*100))
+
+			utils.PrintOrder(order)
+		} else {
+			fmt.Println("I do have some contracts for this option but they have not been filled so i cant sell them!")
+			fmt.Println("Message: " + order.Message)
 		}
-
-		sellPrice := float64(resp.Contracts) * optionData.Last
-		purchasePrice := float64(resp.Contracts) * resp.PurchasePrice
-		totalProfit := sellPrice - purchasePrice
-
-		fmt.Println("I sold " + fmt.Sprint(resp.Contracts) + " contracts at $" + fmt.Sprint(optionData.Last) + " each for a total of $" + fmt.Sprint(sellPrice))
-		fmt.Println("The total purchase price was $" + fmt.Sprint(purchasePrice) + " that makes our total profit $" + fmt.Sprint(totalProfit))
-
-		err = utils.SetTradeBal(tradeBalance + sellPrice)
-		if err != nil {
-			fmt.Println("Error Setting trade ball: " + errors.WithStack(err).Error())
-		}
-
-		utils.PrintOrder(order)
 	} else {
 		fmt.Println("I do not own any contracts for this option")
 		fmt.Println("Message: " + order.Message)
