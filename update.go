@@ -10,92 +10,106 @@ import (
 	"github.com/pkg/errors"
 )
 
+var marketHours td.MarketHours
+var marketOpen time.Time
+var marketClose time.Time
+
+func updateMarketHours() {
+
+	var err error
+
+	marketHours, err = td.GetMarketHours()
+	if err != nil {
+		utils.Log("Getting market hours:"+errors.WithStack(err).Error(), utils.LogError)
+	}
+	if marketHours.Option.EQO.IsOpen == true {
+		marketOpen, err = time.Parse("2006-01-02T15:04:05Z07:00", marketHours.Option.EQO.SessionHours.RegularMarket[0].Start)
+		if err != nil {
+			utils.Log("Parsing time:"+errors.WithStack(err).Error(), utils.LogError)
+		}
+
+		marketClose, err = time.Parse("2006-01-02T15:04:05Z07:00", marketHours.Option.EQO.SessionHours.RegularMarket[0].End)
+		if err != nil {
+			utils.Log("Parsing time:"+errors.WithStack(err).Error(), utils.LogError)
+		}
+	}
+}
+
 func update(period int) {
 	for {
 		var accountInfo td.GetAccountResponse
 		err := td.GetAccount(utils.Config.TD.AccountID, &accountInfo)
 		if err != nil {
-			fmt.Println("Error getting account info: " + errors.WithStack(err).Error())
-		}
-
-		tradeBalance, err := utils.GetTradeBal(accountInfo.Account.CurrentBalances.CashAvailableForTrading)
-		if err != nil {
-			fmt.Println("Error getting trade ballance: " + errors.WithStack(err).Error())
-		}
-
-		var update bool = true
-
-		marketHours, err := td.GetMarketHours()
-		if err != nil {
-			fmt.Println("Error getting market hours: " + errors.WithStack(err).Error())
-		}
-
-		if marketHours.Option.EQO.IsOpen == false {
-			update = false
+			utils.Log("Getting account info: "+errors.WithStack(err).Error()+"\ntrying again next update", utils.LogError)
 		} else {
-			start, err := time.Parse("2006-01-02T15:04:05Z07:00", marketHours.Option.EQO.SessionHours.RegularMarket[0].Start)
-			if err != nil {
-				fmt.Println("Error parsing time: " + errors.WithStack(err).Error())
-			}
 
-			end, err := time.Parse("2006-01-02T15:04:05Z07:00", marketHours.Option.EQO.SessionHours.RegularMarket[0].End)
-			if err != nil {
-				fmt.Println("Error parsing time: " + errors.WithStack(err).Error())
-			}
+			tradeBalance := accountInfo.Account.CurrentBalances.CashAvailableForTrading
 
-			if !utils.InTimeSpan(start, end, time.Now()) {
+			var update bool = true
+
+			if marketHours.Option.EQO.IsOpen == false { //Checking if market is open
+				if marketOpen.YearDay() != time.Now().YearDay() {
+					updateMarketHours()
+				}
 				update = false
+			} else {
+				if !utils.InTimeSpan(marketOpen, marketClose, time.Now()) {
+					if marketOpen.YearDay() != time.Now().YearDay() {
+						updateMarketHours()
+					}
+					update = false
+				}
 			}
-		}
 
-		if update {
+			if update {
 
-			resp, err := mysql.GetOrders()
-			if err != nil {
-				fmt.Println("Error querying db: " + errors.WithStack(err).Error())
-			}
-
-			for i := 0; i < len(resp); i++ {
-				optionData, dataFound, err := td.GetOptionData(resp[i].Order)
+				resp, err := mysql.GetOrders()
 				if err != nil {
-					fmt.Println("Error getting option data: " + errors.WithStack(err).Error())
+					utils.Log("Querying db: "+errors.WithStack(err).Error(), utils.LogError)
 				}
 
-				if dataFound {
-					purchasePrice := resp[i].PurchasePrice
-					currentPrice := optionData.Last
+				for i := 0; i < len(resp); i++ {
+					optionData, dataFound, err := td.GetOptionData(resp[i].Order)
+					if err != nil {
+						utils.Log("Getting option data: "+errors.WithStack(err).Error(), utils.LogError)
+					}
 
-					if resp[i].Status == "PENDING" {
-						response, err := td.GetOrders(utils.Config.TD.AccountID, time.Now(), time.Now())
-						if err != nil {
-							fmt.Println("Error getting list of orders from TD: " + errors.WithStack(err).Error())
-						}
+					if dataFound {
+						purchasePrice := resp[i].PurchasePrice
+						currentPrice := optionData.Last
 
-						for j := 0; j < len(response); j++ {
-							if response[j].OrderLegCollection[0].Instrument.Symbol == optionData.Symbol && response[j].OrderLegCollection[0].Instruction == "BUY_TO_OPEN" {
-								if response[j].Status == "FILLED" {
-									err := mysql.OrderFilled(resp[i].Order, int(response[j].FilledQuantity))
-									if err != nil {
-										fmt.Println("Error getting updating db: " + errors.WithStack(err).Error())
+						if resp[i].Status == "PENDING" {
+							response, err := td.GetOrders(utils.Config.TD.AccountID, time.Now(), time.Now())
+							if err != nil {
+								utils.Log("Error getting list of orders from TD: "+errors.WithStack(err).Error(), utils.LogError)
+							}
+
+							for j := 0; j < len(response); j++ {
+								if response[j].OrderLegCollection[0].Instrument.Symbol == optionData.Symbol && response[j].OrderLegCollection[0].Instruction == "BUY_TO_OPEN" {
+									if response[j].Status == "FILLED" {
+										err := mysql.OrderFilled(resp[i].Order, int(response[j].FilledQuantity))
+										if err != nil {
+											utils.Log("Updateing db:"+errors.WithStack(err).Error(), utils.LogError)
+										}
+										utils.Log("The order for "+resp[i].Symbol+" has been filled. The filled quantity is "+fmt.Sprint(response[j].FilledQuantity), utils.LogInfo)
+										break
 									}
-									fmt.Println("The order for " + resp[i].Symbol + " has been filled. The filled quantity is " + fmt.Sprint(response[j].FilledQuantity))
-									break
 								}
+							}
+
+						} else {
+							if currentPrice > purchasePrice && int((currentPrice-purchasePrice)/purchasePrice*100) >= int(utils.Config.Settings.Trade.AutoSellProfitPercent*100) {
+								utils.Log("Auto selling for profit baby!", utils.LogInfo)
+								sell(resp[i].Order, optionData, tradeBalance)
+							} else if currentPrice < purchasePrice && int(currentPrice*100) <= int(resp[i].Order.StopLoss*100) {
+								utils.Log("Auto selling to save our ass!", utils.LogInfo)
+								sell(resp[i].Order, optionData, tradeBalance)
 							}
 						}
 
 					} else {
-						if currentPrice > purchasePrice && int((currentPrice-purchasePrice)/purchasePrice*100) >= int(utils.Config.Settings.Trade.AutoSellProfitPercent*100) {
-							fmt.Println("Auto selling for profit baby!")
-							sell(resp[i].Order, optionData, tradeBalance)
-						} else if currentPrice < purchasePrice && int(currentPrice*100) <= int(resp[i].Order.StopLoss*100) {
-							fmt.Println("Auto selling to save our ass!")
-							sell(resp[i].Order, optionData, tradeBalance)
-						}
+						utils.Log("Data could not be found for: "+resp[i].Symbol, utils.LogError)
 					}
-
-				} else {
-					fmt.Println("Error data could not be found for: " + resp[i].Symbol)
 				}
 			}
 		}

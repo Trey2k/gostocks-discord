@@ -10,6 +10,7 @@ var Config *Configuration
 
 //TradeSettings trade settings
 type TradeSettings struct {
+	MakeOrders                  bool
 	MakeRiskyTrades             bool
 	RiskyInvestPercent          float64
 	SafeInvestPercent           float64
@@ -99,6 +100,7 @@ func GetConfig() (configuration *Configuration, err error) {
 		},
 		SettingsStruct{
 			Trade: TradeSettings{
+				MakeOrders:                  false,
 				MakeRiskyTrades:             true,
 				RiskyInvestPercent:          0.05,
 				SafeInvestPercent:           0.10,

@@ -22,6 +22,7 @@ func init() {
 func main() {
 	go webapp.Start(td.CallbackAddress, td.AuthURL)
 	td.Auth() //Holding call untill authed
+	updateMarketHours()
 
 	discord, err := discordgo.New(utils.Config.Discord.Token)
 	utils.ErrCheck("error creating discord session", err)
@@ -35,9 +36,7 @@ func main() {
 	defer discord.Close()
 
 	go update(utils.Config.Settings.Trade.UpdateInterval)
-	go procOrder(ordersChannel)
-
-	<-make(chan struct{})
+	procOrder(ordersChannel)
 }
 
 //IsValidTicker test if string is a valid ticker

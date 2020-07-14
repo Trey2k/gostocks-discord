@@ -116,7 +116,6 @@ type ExpDateOption struct {
 	Volatility             float64 `json:"volatility"`
 	Delta                  float64 `json:"delta"`
 	Gamma                  float64 `json:"gamma"`
-	Theta                  float64 `json:"theta"`
 	Vega                   float64 `json:"vega"`
 	Rho                    float64 `json:"rho"`
 	OpenInterest           int     `json:"openInterest"`

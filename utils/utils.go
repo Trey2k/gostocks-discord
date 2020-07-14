@@ -9,27 +9,36 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 //Init init utils, must be ran before anything that uses the config
 func Init() {
 	var err error
+
+	if _, err := os.Stat("./logs"); os.IsNotExist(err) {
+		os.Mkdir("./logs", 0700)
+	}
+
 	Config, err = GetConfig()
 	ErrCheck("Error getting config", err)
 
 	if IsStructEmpty(Config.Discord) {
-		log.Fatal("A value in config.Discord is empty")
+		Log("A value in config.Discord is empty", LogError)
+		panic("Fatal")
 	}
 
 	if IsStructEmpty(Config.TD) {
-		log.Fatal("A value in config.TD is empty")
+		Log("A value in config.TD is empty", LogError)
+		panic("Fatal")
 	}
 }
 
 //ErrCheck check if there is an error
 func ErrCheck(msg string, err error) {
 	if err != nil {
-		fmt.Printf("%s: %+v", msg, err)
+		Log(fmt.Sprintf("%s: %+v", msg, errors.WithStack(err)), LogError)
 		panic(err)
 	}
 }
@@ -102,13 +111,45 @@ func FileExists(filename string) bool {
 }
 
 //PrintOrder nicley print order
-func PrintOrder(order OrderStruct) {
-	fmt.Println("----------------------------------------------------------------------------------------------------------------------------------")
-	fmt.Println("Buy: " + fmt.Sprint(order.Buy) + ", Ticker: " + order.Ticker + ", Date: " + order.ExpDate.Format("1/2/2006") + ", StrikerPrice: " + fmt.Sprint(order.StrikPrice) + ", ContractType: " + order.ContractType + ", Buy Price: " + fmt.Sprint(order.Price) + ", Risky: " + fmt.Sprint(order.Risky) + ", Stop Loss: " + fmt.Sprint(order.StopLoss))
-	fmt.Println("----------------------------------------------------------------------------------------------------------------------------------")
+func PrintOrder(order OrderStruct) string {
+	return fmt.Sprintf("----------------------------------------------------------------------------------------------------------------------------------\n"+
+		"Buy: %v, Ticker: %s, Date: %s, StrikerPrice: %v, ContractType: %s, Alerted Price: %v, Risky: %v, Stop Loss: %v\n"+
+		"----------------------------------------------------------------------------------------------------------------------------------\n",
+		order.Buy, order.Ticker, order.ExpDate.Format("1/2/2006"), order.StrikPrice, order.ContractType, order.Price, order.Risky, order.StopLoss)
 }
 
 //InTimeSpan Stuff
 func InTimeSpan(start, end, check time.Time) bool {
 	return check.After(start) && check.Before(end)
+}
+
+const (
+	_ = iota
+	LogError
+	LogOrder
+	LogInfo
+)
+
+//Log log events
+func Log(msg string, logType uint) {
+	switch logType {
+	case LogError:
+		f, _ := os.OpenFile("./logs/error.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0700)
+		defer f.Close()
+		log.SetOutput(f)
+		log.Printf("Error: %s\n", msg)
+		fmt.Printf("Error: %s\n", msg)
+	case LogOrder:
+		f, _ := os.OpenFile("./logs/info.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0700)
+		defer f.Close()
+		log.SetOutput(f)
+		log.Printf("New order:\n%s", msg)
+		fmt.Printf("New order:\n%s", msg)
+	case LogInfo:
+		f, _ := os.OpenFile("./logs/info.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0700)
+		defer f.Close()
+		log.SetOutput(f)
+		log.Printf("Info: %s\n", msg)
+		fmt.Printf("Info: %s\n", msg)
+	}
 }

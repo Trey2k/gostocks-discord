@@ -57,7 +57,6 @@ func GetAccounts(response *GetAccountResponses) error {
 
 //GetAccount returns specific account
 func GetAccount(accountID string, response *GetAccountResponse) error {
-
 	err := getRequest("https://api.tdameritrade.com/v1/accounts/"+accountID, accessToken, &response)
 	return err
 }

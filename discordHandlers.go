@@ -14,9 +14,11 @@ func chatListener(discord *discordgo.Session, message *discordgo.MessageCreate) 
 	channelID := message.ChannelID
 
 	for i := 0; i < len(utils.Config.Discord.GuildIDs); i++ {
-		if serverID == utils.Config.Discord.GuildIDs[i] && channelID == utils.Config.Discord.ChannelIDs[i] {
-			order := ChatParse(message.Content, *message.Author, message.ID)
-			ordersChannel <- order
+		for j := 0; j < len(utils.Config.Discord.ChannelIDs); j++ {
+			if serverID == utils.Config.Discord.GuildIDs[i] && channelID == utils.Config.Discord.ChannelIDs[j] {
+				order := ChatParse(message.Content, *message.Author, message.ID)
+				ordersChannel <- order
+			}
 		}
 	}
 }

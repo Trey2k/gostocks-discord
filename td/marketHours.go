@@ -1,7 +1,7 @@
 package td
 
 //MarketHourse Stuff
-type MarketHourse struct {
+type MarketHours struct {
 	Option OptionHours `json:"option"`
 }
 
@@ -35,8 +35,8 @@ type MarketSession struct {
 }
 
 //GetMarketHours get the market hours
-func GetMarketHours() (MarketHourse, error) {
-	var response MarketHourse
+func GetMarketHours() (MarketHours, error) {
+	var response MarketHours
 	err := getRequest("https://api.tdameritrade.com/v1/marketdata/OPTION/hours", accessToken, &response)
 	return response, err
 }

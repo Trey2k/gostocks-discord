@@ -14,7 +14,7 @@ func placeOrder(order utils.OrderStruct) {
 	var accountInfo td.GetAccountResponse
 	err := td.GetAccount(utils.Config.TD.AccountID, &accountInfo)
 	if err != nil {
-		fmt.Println("Error getting account info: " + errors.WithStack(err).Error())
+		utils.Log("Getting account info: "+errors.WithStack(err).Error(), utils.LogError)
 	}
 
 	tradeSettings := utils.Config.Settings.Trade
@@ -46,26 +46,17 @@ func placeOrder(order utils.OrderStruct) {
 		}
 	}
 
-	marketHours, err := td.GetMarketHours()
-	if err != nil {
-		fmt.Println("Error getting market hours: " + errors.WithStack(err).Error())
-	}
-
-	if marketHours.Option.EQO.IsOpen == false {
+	if marketHours.Option.EQO.IsOpen == false { //Checking if market is open
+		if marketOpen.YearDay() != time.Now().YearDay() {
+			updateMarketHours()
+		}
 		makeTrade = false
 		marketClosed = true
 	} else {
-		start, err := time.Parse("2006-01-02T15:04:05Z07:00", marketHours.Option.EQO.SessionHours.RegularMarket[0].Start)
-		if err != nil {
-			fmt.Println("Error parsing time: " + errors.WithStack(err).Error())
-		}
-
-		end, err := time.Parse("2006-01-02T15:04:05Z07:00", marketHours.Option.EQO.SessionHours.RegularMarket[0].End)
-		if err != nil {
-			fmt.Println("Error parsing time: " + errors.WithStack(err).Error())
-		}
-
-		if !utils.InTimeSpan(start, end, time.Now()) {
+		if !utils.InTimeSpan(marketOpen, marketClose, time.Now()) {
+			if marketOpen.YearDay() != time.Now().YearDay() {
+				updateMarketHours()
+			}
 			makeTrade = false
 			marketClosed = true
 		}
@@ -77,7 +68,7 @@ func placeOrder(order utils.OrderStruct) {
 	} else {
 		optionData, dataFound, err = td.GetOptionData(order)
 		if err != nil {
-			fmt.Println("Error getting option data: " + errors.WithStack(err).Error())
+			utils.Log("Getting option data: "+errors.WithStack(err).Error(), utils.LogError)
 		}
 	}
 
@@ -122,49 +113,47 @@ func placeOrder(order utils.OrderStruct) {
 func buy(tradeBalance float64, initalBallance float64, investPercent float64, order utils.OrderStruct, optionData td.ExpDateOption) {
 	aleadyOwn, err := mysql.AlreadyOwn(optionData.Symbol)
 	if err != nil {
-		fmt.Println("Error querying db: " + errors.WithStack(err).Error())
+		utils.Log("Querying db: "+errors.WithStack(err).Error(), utils.LogError)
 	}
 	if !aleadyOwn {
 		tradeSettings := utils.Config.Settings.Trade
-		contracts := int64((initalBallance * investPercent) / (optionData.Last * 100))
+		multiplier := optionData.Multiplier
+
+		contracts := int64((initalBallance * investPercent) / (optionData.Last * multiplier))
 		if int(tradeBalance*100) >= int((initalBallance*investPercent)*100) && contracts != 0 {
 			if int(optionData.Last*100) <= int(order.Price*100) || int((optionData.Last-order.Price)/optionData.Last*100) <= int(tradeSettings.AllowedPriceIncreasePercent*100) {
 
 				mysql.NewOrder(order, optionData, contracts)
 
-				totalPurchasePrice := float64(contracts) * (optionData.Last * 100)
-				err = utils.SetTradeBal(tradeBalance - totalPurchasePrice)
-				if err != nil {
-					fmt.Println("Error Setting trade ball: " + errors.WithStack(err).Error())
-				}
+				totalPurchasePrice := float64((int(contracts) * int((optionData.Last*multiplier)*100)) / 100)
 
-				payload := td.PlaceOrderBuyPayload{
-					ComplexOrderStrategyType: "NONE",
-					OrderType:                "LIMIT",
-					Session:                  "NORMAL",
-					Price:                    fmt.Sprint(float64(int((order.Price+(order.Price*tradeSettings.AllowedPriceIncreasePercent))*100)) / 100),
-					Duration:                 "DAY",
-					OrderStrategyType:        "SINGLE",
-					OrderLegCollection: []td.OrderLegCollectionPayload{
-						{
-							Instruction: "BUY_TO_OPEN",
-							Quantity:    int(contracts),
-							Instrument: td.InstrumentPayload{
-								Symbol:    optionData.Symbol,
-								AssetType: "OPTION",
+				if utils.Config.Settings.Trade.MakeOrders {
+					payload := td.PlaceOrderBuyPayload{
+						ComplexOrderStrategyType: "NONE",
+						OrderType:                "LIMIT",
+						Session:                  "NORMAL",
+						Price:                    fmt.Sprint(float64(int((optionData.Last+(optionData.Last*tradeSettings.AllowedPriceIncreasePercent))*100)) / 100), //Normiliing for real price
+						Duration:                 "DAY",
+						OrderStrategyType:        "SINGLE",
+						OrderLegCollection: []td.OrderLegCollectionPayload{
+							{
+								Instruction: "BUY_TO_OPEN",
+								Quantity:    int(contracts),
+								Instrument: td.InstrumentPayload{
+									Symbol:    optionData.Symbol,
+									AssetType: "OPTION",
+								},
 							},
 						},
-					},
+					}
+
+					err := td.PlaceOrderBuy(utils.Config.TD.AccountID, payload)
+					if err != nil {
+						utils.Log("BAD BAD BAD I FAILED TO MAKE THIS ORDER THROUGH TD\n"+order.Message+"\n"+errors.WithStack(err).Error(), utils.LogError)
+					}
 				}
 
-				err := td.PlaceOrderBuy(utils.Config.TD.AccountID, payload)
-				if err != nil {
-					fmt.Println(order.Message)
-					utils.ErrCheck("BAD BAD BAD ERROR MAKEING ORDER: ", err)
-				}
-
-				fmt.Println("I made a order of " + fmt.Sprint(contracts) + " contracts at $" + fmt.Sprint(optionData.Last*100) + " or option price of $" + fmt.Sprint(optionData.Last) + " each for a total price of $" + fmt.Sprint(totalPurchasePrice))
-				utils.PrintOrder(order)
+				utils.Log("I made a order of "+fmt.Sprint(contracts)+" contracts at $"+fmt.Sprint(float64(int((optionData.Last*multiplier)*100)/100))+" or option price of $"+fmt.Sprint(optionData.Last)+" each for a total price of $"+fmt.Sprint(totalPurchasePrice)+"\n"+utils.PrintOrder(order), utils.LogOrder)
 
 			} else { //106
 				failMessage := "The price increase is greater than " + fmt.Sprint(int(tradeSettings.AllowedPriceIncreasePercent*100)) + "% at " + fmt.Sprint(int((optionData.Last-order.Price)/optionData.Last*100)) + "%"
@@ -183,70 +172,68 @@ func buy(tradeBalance float64, initalBallance float64, investPercent float64, or
 func sell(order utils.OrderStruct, optionData td.ExpDateOption, tradeBalance float64) {
 	owned, err := mysql.AlreadyOwn(optionData.Symbol)
 	if err != nil {
-		fmt.Println("Error querying db: " + errors.WithStack(err).Error())
+		utils.Log("Querying db: "+errors.WithStack(err).Error(), utils.LogError)
 	}
 	if owned {
+		multiplier := optionData.Multiplier
 		resp, err := mysql.RetriveActiveOrder(optionData.Symbol)
 		if err != nil {
-			fmt.Println("Error querying db: " + errors.WithStack(err).Error())
+			utils.Log("Querying db: "+errors.WithStack(err).Error(), utils.LogError)
 		}
 
 		if resp.Status != "PENDING" {
 
 			err = mysql.SellContract(order)
 			if err != nil {
-				fmt.Println("Error querying db: " + errors.WithStack(err).Error())
+				utils.Log("Querying db: "+errors.WithStack(err).Error(), utils.LogError)
 			}
 
 			sellPrice := float64(resp.Contracts) * optionData.Last
 			purchasePrice := float64(resp.Contracts) * resp.PurchasePrice
 			totalProfit := sellPrice - purchasePrice
 
-			payload := td.PlaceOrderSellPayload{
-				ComplexOrderStrategyType: "NONE",
-				OrderType:                "MARKET",
-				Session:                  "NORMAL",
-				Duration:                 "DAY",
-				OrderStrategyType:        "SINGLE",
-				OrderLegCollection: []td.OrderLegCollectionPayload{
-					{
-						Instruction: "SELL_TO_CLOSE",
-						Quantity:    resp.Contracts,
-						Instrument: td.InstrumentPayload{
-							Symbol:    optionData.Symbol,
-							AssetType: "OPTION",
+			if utils.Config.Settings.Trade.MakeOrders {
+				payload := td.PlaceOrderSellPayload{
+					ComplexOrderStrategyType: "NONE",
+					OrderType:                "MARKET",
+					Session:                  "NORMAL",
+					Duration:                 "DAY",
+					OrderStrategyType:        "SINGLE",
+					OrderLegCollection: []td.OrderLegCollectionPayload{
+						{
+							Instruction: "SELL_TO_CLOSE",
+							Quantity:    resp.Contracts,
+							Instrument: td.InstrumentPayload{
+								Symbol:    optionData.Symbol,
+								AssetType: "OPTION",
+							},
 						},
 					},
-				},
+				}
+
+				err = td.PlaceOrderSell(utils.Config.TD.AccountID, payload)
+				if err != nil {
+					utils.Log("BAD BAD BAD I FAILED TO MAKE THIS ORDER THROUGH TD\n"+order.Message+"\n"+errors.WithStack(err).Error(), utils.LogError)
+				}
 			}
 
-			err = td.PlaceOrderSell(utils.Config.TD.AccountID, payload)
-			if err != nil {
-				fmt.Println(order.Message)
-				utils.ErrCheck("BAD BAD BAD ERROR SELLING ORDER: ", err)
-			}
-
-			fmt.Println("I sold " + fmt.Sprint(resp.Contracts) + " contracts at $" + fmt.Sprint(optionData.Last) + " each for a total of $" + fmt.Sprint(sellPrice*100))
-			fmt.Println("The total purchase price was $" + fmt.Sprint(purchasePrice*100) + " that makes our total profit $" + fmt.Sprint(totalProfit*100))
+			utils.Log("I sold "+fmt.Sprint(resp.Contracts)+" contracts at $"+fmt.Sprint(optionData.Last)+" each for a total of $"+fmt.Sprint(float64(int(sellPrice*multiplier)*100)/100)+
+				"\nThe total purchase price was $"+fmt.Sprint(float64(int(purchasePrice*multiplier)*100)/100)+" that makes our total profit $"+fmt.Sprint(float64(int(totalProfit*multiplier)*100)/100), utils.LogOrder)
 
 			utils.PrintOrder(order)
 		} else {
-			fmt.Println("I do have some contracts for this option but they have not been filled so i cant sell them!")
-			fmt.Println("Message: " + order.Message)
+			utils.Log("I do have some contracts for this option but they have not been filled so i cant sell them!\nMessage: "+order.Message, utils.LogError)
 		}
 	} else {
-		fmt.Println("I do not own any contracts for this option")
-		fmt.Println("Message: " + order.Message)
+		utils.Log("I do not own any contracts for this option\nMessage: "+order.Message, utils.LogError)
 	}
 }
 
 func failLog(order utils.OrderStruct, failCode int, failMessage string) {
-	fmt.Println("I did not make an order: " + failMessage)
-
-	fmt.Println("Message: " + order.Message)
+	utils.Log("Order could not be made. "+failMessage+"\nMessage: "+order.Message, utils.LogError)
 
 	err := mysql.FailedOrder(order, failCode, failMessage)
 	if err != nil {
-		fmt.Println("Error saving failedOrder in db: " + errors.WithStack(err).Error())
+		utils.Log("Saving failedOrder in db: "+errors.WithStack(err).Error(), utils.LogError)
 	}
 }

@@ -14,12 +14,12 @@ import (
 var tokenRefreshes int = 0
 
 //proccess request
-func atuhRequest(data url.Values, endpoint string, response interface{}) error {
+func atuhRequest(data url.Values, endpoint string, response interface{}) (int, error) {
 
 	client := &http.Client{}
 	request, err := http.NewRequest("POST", endpoint, strings.NewReader(data.Encode()))
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
@@ -27,11 +27,11 @@ func atuhRequest(data url.Values, endpoint string, response interface{}) error {
 
 	resp, err := client.Do(request)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(&response)
-	return err
+	return resp.StatusCode, err
 }
 
 func getRequest(endpoint string, token string, response interface{}) error {
@@ -59,22 +59,16 @@ func getRequest(endpoint string, token string, response interface{}) error {
 		return errors.New("There was a validation problem with the request")
 
 	case 401:
-		tokenRefreshes++
-		if tokenRefreshes == 1 {
-			var resp RequestTokensResponse
-			err := refreshTokens(refreshToken, clientCode, &resp)
-			if err != nil {
-				return err
-			}
-			accessToken = resp.AccessToken
-			err = getRequest(endpoint, accessToken, &response)
-			if err != nil {
-				return err
-			}
-			tokenRefreshes = 0
-			return nil
+		access, err := refreshTokens(refreshToken, clientCode)
+		if err != nil {
+			return err
 		}
-		return errors.New("Error generating new access token. Please launch application again and reauthenticate")
+		accessToken = access
+		err = getRequest(endpoint, accessToken, &response)
+		if err != nil {
+			return err
+		}
+		return nil
 	case 403:
 		return errors.New("The caller is forbidden from accessing this page")
 	case 404:
@@ -112,26 +106,17 @@ func postRequest(endpoint string, token string, payload interface{}) error {
 	case 201:
 		return nil
 	case 400:
-		fmt.Println(string(bodyBytes))
-		fmt.Println("-------------------------------------------")
-		fmt.Println(fmt.Sprint(resp))
 		return errors.New("There was a validation problem with the request")
 
 	case 401:
-		tokenRefreshes++
-		if tokenRefreshes == 1 {
-			var response RequestTokensResponse
-			err := refreshTokens(refreshToken, clientCode, &response)
-			if err != nil {
-				return err
-			}
-			accessToken = response.AccessToken
-			err = postRequest(endpoint, accessToken, payload)
-			if err != nil {
-				return err
-			}
-			tokenRefreshes = 0
-			return errors.New("Could not generate refresh token")
+		access, err := refreshTokens(refreshToken, clientCode)
+		if err != nil {
+			return err
+		}
+		accessToken = access
+		err = postRequest(endpoint, accessToken, payload)
+		if err != nil {
+			return err
 		}
 		return errors.New("Error generating new access token. Please launch application again and reauthenticate")
 	case 403:
@@ -169,22 +154,18 @@ func putRequest(endpoint string, token string, payload interface{}) error {
 		return errors.New("There was a validation problem with the request")
 
 	case 401:
-		tokenRefreshes++
-		if tokenRefreshes == 1 {
-			var response RequestTokensResponse
-			err := refreshTokens(refreshToken, clientCode, &response)
-			if err != nil {
-				return err
-			}
-			accessToken = response.AccessToken
-			err = putRequest(endpoint, accessToken, payload)
-			if err != nil {
-				return err
-			}
-			tokenRefreshes = 0
-			return nil
+		access, err := refreshTokens(refreshToken, clientCode)
+		if err != nil {
+			return err
 		}
-		return errors.New("Error generating new access token. Please launch application again and reauthenticate")
+		accessToken = access
+		err = putRequest(endpoint, accessToken, payload)
+		if err != nil {
+			return err
+		}
+		tokenRefreshes = 0
+		return nil
+
 	case 403:
 		return errors.New("The caller is forbidden from accessing this page")
 	case 404:
@@ -217,22 +198,17 @@ func deleteRequest(endpoint string, token string) error {
 		return errors.New("There was a validation problem with the request")
 
 	case 401:
-		tokenRefreshes++
-		if tokenRefreshes == 1 {
-			var response RequestTokensResponse
-			err := refreshTokens(refreshToken, clientCode, &response)
-			if err != nil {
-				return err
-			}
-			accessToken = response.AccessToken
-			err = deleteRequest(endpoint, accessToken)
-			if err != nil {
-				return err
-			}
-			tokenRefreshes = 0
-			return nil
+		access, err := refreshTokens(refreshToken, clientCode)
+		if err != nil {
+			return err
 		}
-		return errors.New("Error generating new access token. Please launch application again and reauthenticate")
+		accessToken = access
+		err = deleteRequest(endpoint, accessToken)
+		if err != nil {
+			return err
+		}
+		tokenRefreshes = 0
+		return nil
 	case 403:
 		return errors.New("The caller is forbidden from accessing this page")
 	case 404:

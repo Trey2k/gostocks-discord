@@ -48,23 +48,23 @@ func ChatParse(msg string, sender discordgo.User, messageID string) utils.OrderS
 			if i <= 3 && isValidTicker(cmd) {
 				order.Ticker = cmd
 			} else {
-				if strings.Contains(cmd, "/") && utils.IsNumericIgnore(cmd, "/", 2) {
+				if strings.Contains(cmd, "/") && utils.IsNumericIgnore(cmd, "/", 2) && order.ExpDate.IsZero() {
 
 					dates := strings.Split(cmd, "/")
 					if len(dates) == 2 {
 						date, err := time.Parse("1/2/2006", cmd+"/"+fmt.Sprint(time.Now().Year()))
 						if err != nil {
-							fmt.Println("Error converting string date '" + cmd + "' to date: " + errors.WithStack(err).Error())
+							utils.Log("Error converting string date '"+cmd+"' to date: "+errors.WithStack(err).Error(), utils.LogError)
 						}
 						order.ExpDate = date
 					} else if len(dates) == 3 {
 						date, err := time.Parse("1/2/2006", cmd)
 						if err != nil {
-							fmt.Println("Error converting string date '" + cmd + "' to date: " + errors.WithStack(err).Error())
+							utils.Log("Error converting string date '"+cmd+"' to date: "+errors.WithStack(err).Error(), utils.LogError)
 						}
 						order.ExpDate = date
 					} else {
-						fmt.Println("Error converting string date '" + cmd + "' to date: Unknown format.")
+						utils.Log("Error converting string date '"+cmd+"' to date: "+errors.WithStack(err).Error(), utils.LogError)
 					}
 					if order.ExpDate.Year() == time.Now().Year() && order.ExpDate.YearDay() <= (time.Now().YearDay()+1) && order.Buy == true {
 						order.Risky = true
@@ -75,14 +75,14 @@ func ChatParse(msg string, sender discordgo.User, messageID string) utils.OrderS
 					if strings.Contains(cmd, "C") {
 						x, err := utils.ToNumericIgnore(cmd, "C", 1)
 						if err != nil {
-							fmt.Println("Error converting strike price '" + cmd + "' to int64: " + errors.WithStack(err).Error())
+							utils.Log("Error converting strike price '"+cmd+"' to number: "+errors.WithStack(err).Error(), utils.LogError)
 						}
 						order.StrikPrice = x
 						order.ContractType = "CALL"
 					} else {
 						x, err := utils.ToNumericIgnore(cmd, "P", 1)
 						if err != nil {
-							fmt.Println("Error converting strike price '" + cmd + "' to int64: " + errors.WithStack(err).Error())
+							utils.Log("Error converting strike price '"+cmd+"' to number: "+errors.WithStack(err).Error(), utils.LogError)
 						}
 						order.StrikPrice = x
 						order.ContractType = "PUT"
@@ -92,12 +92,12 @@ func ChatParse(msg string, sender discordgo.User, messageID string) utils.OrderS
 					if order.Price == 0 {
 						order.Price, err = utils.ToNumericIgnore(cmd, "@", 1)
 						if err != nil {
-							fmt.Println("Error converting price '" + cmd + "' to float64: " + errors.WithStack(err).Error())
+							utils.Log("Error converting price '"+cmd+"' to number: "+errors.WithStack(err).Error(), utils.LogError)
 						}
 					} else if order.StopLoss == 0 {
 						order.StopLoss, err = utils.ToNumeric(cmd)
 						if err != nil {
-							fmt.Println("Error converting stop loss '" + cmd + "' to float64: " + errors.WithStack(err).Error())
+							utils.Log("Error converting price '"+cmd+"' to number: "+errors.WithStack(err).Error(), utils.LogError)
 						}
 					}
 				}

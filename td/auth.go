@@ -40,13 +40,12 @@ func Auth() {
 		browser.OpenURL(AuthURL)
 
 		oauth := <-webapp.OauthChan //Holding call]]
-		var response RequestTokensResponse
 
-		err := requestTokens(oauth, clientCode, &response)
+		access, refresh, err := requestTokens(oauth, clientCode)
 		utils.ErrCheck("Error requesting TD Tokens", err)
 
-		accessToken = response.AccessToken
-		refreshToken = response.RefreshToken
+		accessToken = access
+		refreshToken = refresh
 		err = saveRefreshToken(refreshToken)
 		utils.ErrCheck("Error saveing refresh token", err)
 	}
@@ -55,10 +54,10 @@ func Auth() {
 }
 
 func saveRefreshToken(refreshToken string) error {
-	if _, err := os.Stat("./info"); os.IsNotExist(err) {
-		os.Mkdir("./info", 0700)
+	if _, err := os.Stat("./tokens"); os.IsNotExist(err) {
+		os.Mkdir("./tokens", 0700)
 	}
-	file, err := os.Create("./info/refresh.token")
+	file, err := os.Create("./tokens/refresh.token")
 	if err != nil {
 		return err
 	}
@@ -72,18 +71,18 @@ func saveRefreshToken(refreshToken string) error {
 }
 
 func checkRefreshToken() (bool, error) {
-	if utils.FileExists("./info/refresh.token") {
-		data, err := ioutil.ReadFile("./info/refresh.token")
+	if utils.FileExists("./tokens/refresh.token") {
+		data, err := ioutil.ReadFile("./tokens/refresh.token")
 		if err != nil {
 			return false, err
 		}
 		token := string(data)
-		var response RequestTokensResponse
-		err = refreshTokens(token, clientCode, &response)
-		if err != nil || response.AccessToken == "" {
+		access, err := refreshTokens(token, clientCode)
+		if err != nil || access == "" {
 			return false, nil
 		}
-		accessToken = response.AccessToken
+		accessToken = access
+		fmt.Println(accessToken)
 		refreshToken = token
 		return true, nil
 	}

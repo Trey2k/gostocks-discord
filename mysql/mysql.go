@@ -48,8 +48,14 @@ func NewOrder(order utils.OrderStruct, optionData td.ExpDateOption, contracts in
 	if err != nil {
 		return err
 	}
+	var status string
+	if utils.Config.Settings.Trade.MakeOrders {
+		status = "PENDING"
+	} else {
+		status = "FILLED"
+	}
 
-	insert, err := db.Query(queryStr, order.Risky, order.Ticker, optionData.Symbol, order.ExpDate.Format(dateFormat), order.StrikPrice, order.ContractType, order.Price, optionData.Last, contracts, order.StopLoss, senderBytes, order.MessageID, order.Message, "PENDING", 0) //TODO: default status should be pending. This is here for offline test runs
+	insert, err := db.Query(queryStr, order.Risky, order.Ticker, optionData.Symbol, order.ExpDate.Format(dateFormat), order.StrikPrice, order.ContractType, order.Price, optionData.Last, contracts, order.StopLoss, senderBytes, order.MessageID, order.Message, status, 0) //TODO: default status should be pending. This is here for offline test runs
 	if err != nil {
 		return err
 	}
