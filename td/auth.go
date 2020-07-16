@@ -38,6 +38,7 @@ func Auth() {
 	utils.ErrCheck("Error checking saved token", err)
 	if !token {
 		browser.OpenURL(AuthURL)
+		fmt.Println(AuthURL)
 
 		oauth := <-webapp.OauthChan //Holding call]]
 
@@ -82,7 +83,6 @@ func checkRefreshToken() (bool, error) {
 			return false, nil
 		}
 		accessToken = access
-		fmt.Println(accessToken)
 		refreshToken = token
 		return true, nil
 	}

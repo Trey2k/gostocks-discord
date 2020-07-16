@@ -28,8 +28,8 @@ func placeOrder(order utils.OrderStruct) {
 
 	var optionData td.ExpDateOption
 
-	tradeBalance := accountInfo.Account.CurrentBalances.CashAvailableForTrading
-	initalBallance := accountInfo.Account.InitialBalances.CashBalance
+	tradeBalance := accountInfo.Account.CurrentBalances.CashAvailableForTrading - accountInfo.Account.CurrentBalances.PendingDeposits
+	initalBallance := accountInfo.Account.InitialBalances.CashAvailableForTrading - accountInfo.Account.InitialBalances.PendingDeposits
 	riskyInvestPercent := tradeSettings.RiskyInvestPercent
 	safeInvestPercent := tradeSettings.SafeInvestPercent
 	useUserWhitelist := tradeSettings.UseUserWhitlist
@@ -88,7 +88,7 @@ func placeOrder(order utils.OrderStruct) {
 				failLog(order, 105, failMessage)
 			}
 		} else {
-			sell(order, optionData, tradeBalance)
+			sell(order, optionData)
 		}
 	} else {
 		if marketClosed { //100
@@ -169,7 +169,7 @@ func buy(tradeBalance float64, initalBallance float64, investPercent float64, or
 	}
 }
 
-func sell(order utils.OrderStruct, optionData td.ExpDateOption, tradeBalance float64) {
+func sell(order utils.OrderStruct, optionData td.ExpDateOption) {
 	owned, err := mysql.AlreadyOwn(optionData.Symbol)
 	if err != nil {
 		utils.Log("Querying db: "+errors.WithStack(err).Error(), utils.LogError)

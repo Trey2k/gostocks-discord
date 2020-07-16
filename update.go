@@ -43,8 +43,6 @@ func update(period int) {
 			utils.Log("Getting account info: "+errors.WithStack(err).Error()+"\ntrying again next update", utils.LogError)
 		} else {
 
-			tradeBalance := accountInfo.Account.CurrentBalances.CashAvailableForTrading
-
 			var update bool = true
 
 			if marketHours.Option.EQO.IsOpen == false { //Checking if market is open
@@ -100,10 +98,10 @@ func update(period int) {
 						} else {
 							if currentPrice > purchasePrice && int((currentPrice-purchasePrice)/purchasePrice*100) >= int(utils.Config.Settings.Trade.AutoSellProfitPercent*100) {
 								utils.Log("Auto selling for profit baby!", utils.LogInfo)
-								sell(resp[i].Order, optionData, tradeBalance)
+								sell(resp[i].Order, optionData)
 							} else if currentPrice < purchasePrice && int(currentPrice*100) <= int(resp[i].Order.StopLoss*100) {
 								utils.Log("Auto selling to save our ass!", utils.LogInfo)
-								sell(resp[i].Order, optionData, tradeBalance)
+								sell(resp[i].Order, optionData)
 							}
 						}
 
