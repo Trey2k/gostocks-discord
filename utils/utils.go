@@ -39,7 +39,6 @@ func Init() {
 func ErrCheck(msg string, err error) {
 	if err != nil {
 		Log(fmt.Sprintf("%s: %+v", msg, errors.WithStack(err)), LogError)
-		panic(err)
 	}
 }
 

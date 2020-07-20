@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var tokenRefreshes int = 0
@@ -42,7 +43,9 @@ func getRequest(endpoint string, token string, response interface{}) error {
 
 	request.Header.Add("Authorization", "Bearer "+token)
 
-	client := &http.Client{}
+	client := http.Client{
+		Timeout: 5 * time.Second,
+	}
 	resp, err := client.Do(request)
 	if err != nil {
 		return err
@@ -95,7 +98,9 @@ func postRequest(endpoint string, token string, payload interface{}) error {
 	request.Header.Add("Content-Type", "application/json")
 	request.Header.Add("Authorization", "Bearer "+token)
 
-	client := &http.Client{}
+	client := http.Client{
+		Timeout: 5 * time.Second,
+	}
 	resp, err := client.Do(request)
 	if err != nil {
 		return err

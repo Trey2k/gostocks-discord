@@ -66,7 +66,9 @@ func ChatParse(msg string, sender discordgo.User, messageID string) utils.OrderS
 					} else {
 						utils.Log("Error converting string date '"+cmd+"' to date: "+errors.WithStack(err).Error(), utils.LogError)
 					}
-					if order.ExpDate.Year() == time.Now().Year() && order.ExpDate.Before(time.Now().Add(time.Hour*24)) && order.Buy == true {
+					future := time.Now().Add(time.Hour * 24)
+					exp := order.ExpDate
+					if exp.Before(future) {
 						order.Risky = true
 					}
 
